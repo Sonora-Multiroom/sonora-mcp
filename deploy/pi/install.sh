@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Install or update sonora-mcp as a systemd service on a Raspberry Pi
 # (64-bit Raspberry Pi OS). This is the only file that needs to be copied to
-# the Pi: it downloads the linux/arm64 binary from the GitHub Release named
-# by RELEASE_TAG (or --version), writes the service configuration and unit,
+# the Pi: it downloads the linux/arm64 archive that GoReleaser published for
+# the release RELEASE_TAG (or --version), verifies it against the release's
+# checksums.txt, installs the binary, writes the service configuration and unit,
 # and (re)starts the service. Safe to re-run.
 #
 #   sudo ./install.sh --hub-url <url> [--port <port>] [--host <address>] [--version <tag>]
@@ -13,7 +14,6 @@ set -euo pipefail
 RELEASE_TAG="dev"
 
 REPO="Sonora-Multiroom/sonora-mcp"
-ASSET="sonora-mcp-linux-arm64"
 BIN="/usr/local/bin/sonora-mcp"
 ENV_FILE="/etc/default/sonora-mcp"
 UNIT_FILE="/etc/systemd/system/sonora-mcp.service"
@@ -59,16 +59,32 @@ command -v systemctl >/dev/null || die "systemd (systemctl) is required"
 command -v curl >/dev/null || die "curl is required (sudo apt install curl)"
 [[ "$(uname -m)" == "aarch64" ]] || die "64-bit ARM OS required (uname -m is $(uname -m), want aarch64)"
 
-# Download to a temp file next to the binary, then rename over it: a rename
-# works while the old binary is running, and a failed download leaves it intact.
-url="https://github.com/${REPO}/releases/download/${tag}/${ASSET}"
+# Download the GoReleaser archive and checksums, verify the archive, then
+# copy the binary to a temp file next to the installed one and rename it into
+# place: a rename works while the old binary is running, and a failed
+# download or check leaves it intact.
+archive="sonora-mcp_${tag#v}_linux_arm64.tar.gz"
+base="https://github.com/${REPO}/releases/download/${tag}"
+work="$(mktemp -d)"
+tmp=""
+trap 'rm -rf "$work"; [[ -z "$tmp" ]] || rm -f "$tmp"' EXIT
+fetch() {
+	curl -fsSL -o "$work/$1" "$base/$1" ||
+		die "download failed: $base/$1 (check the network and that release ${tag} exists)"
+}
+echo "Downloading ${base}/${archive}"
+fetch "$archive"
+fetch checksums.txt
+awk -v f="$archive" '$2 == f' "$work/checksums.txt" >"$work/archive.sha256"
+[[ -s "$work/archive.sha256" ]] || die "checksums.txt of release ${tag} does not list ${archive}"
+(cd "$work" && sha256sum --check --quiet archive.sha256) || die "checksum mismatch for ${archive}"
+tar -xzf "$work/$archive" -C "$work" sonora-mcp || die "${archive} does not contain sonora-mcp"
+
 tmp="$(mktemp /usr/local/bin/.sonora-mcp.XXXXXX)"
-trap 'rm -f "$tmp"' EXIT
-echo "Downloading ${url}"
-curl -fsSL -o "$tmp" "$url" || die "download failed: ${url} (check the network and that release ${tag} exists)"
+cp "$work/sonora-mcp" "$tmp"
 chmod 0755 "$tmp"
 mv -f "$tmp" "$BIN"
-trap - EXIT
+tmp=""
 
 host_arg=""
 [[ -n "$host" ]] && host_arg="--host ${host}"

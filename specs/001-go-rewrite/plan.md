@@ -125,8 +125,14 @@ internal/
 deploy/pi/
 └── install.sh                 # idempotent installer (bash): embeds the systemd unit as a
                                 # heredoc and a pinned release tag; downloads the matching
-                                # linux/arm64 binary from GitHub Releases at install time, so
-                                # this is the only file copied to the Pi
+                                # linux/arm64 archive from GitHub Releases at install time and
+                                # checks it against checksums.txt, so this is the only file
+                                # copied to the Pi
+.goreleaser.yaml               # release builds and archives, as in sonora-cli without Scoop
+.github/workflows/
+├── release.yml                # on v* tags: GoReleaser publishes the GitHub Release
+└── test.yml                   # on PRs: gofmt, go vet, go test -race
+release.sh                     # tags main and pushes the tag (copied from sonora-cli)
 README.md                      # rewritten for Go: build, cross-build, run, Pi install, client config
 .gitignore                     # Go/binary ignores, go.work*, Spec Kit rules; Node rules removed
 ```

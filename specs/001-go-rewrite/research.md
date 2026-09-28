@@ -183,14 +183,16 @@ than recalled. The hub facts were checked against sonora-cli branch `010-public-
   `After=network-online.target`, basic hardening (`NoNewPrivileges`, `ProtectSystem=strict`,
   `ProtectHome=yes`). The binary is not embedded: `deploy/pi/install.sh` has a `RELEASE_TAG`
   variable baked in at release-cut time on `main` (T072; pre-merge validation uses a prerelease via
-  `--version`, T060a), matching the GitHub Release the cross-built
-  `linux/arm64` binary (`sonora-mcp-linux-arm64`) was uploaded to. At install time the script
-  downloads that asset with `curl -fsSL` from
-  `https://github.com/Sonora-Multiroom/sonora-mcp/releases/download/${RELEASE_TAG}/sonora-mcp-linux-arm64`
-  to a temp file in `/usr/local/bin`, then `chmod 0755` and `mv -f` onto
-  `/usr/local/bin/sonora-mcp` (writing over a running executable fails with "Text file busy"; a
-  rename does not, and a failed download leaves the installed binary intact); it fails with a clear
-  message on a non-2xx response, and refuses to run unless `uname -m` is `aarch64`; it
+  `--version`, T060a), matching the GitHub Release that GoReleaser published from that tag
+  (`.goreleaser.yaml` and `.github/workflows/release.yml`, as in sonora-cli without Scoop). At
+  install time the script downloads `sonora-mcp_<version>_linux_arm64.tar.gz` and `checksums.txt`
+  with `curl -fsSL` from
+  `https://github.com/Sonora-Multiroom/sonora-mcp/releases/download/${RELEASE_TAG}/`, checks the
+  archive's SHA-256, extracts the binary to a temp file in `/usr/local/bin`, then `chmod 0755` and
+  `mv -f` onto `/usr/local/bin/sonora-mcp` (writing over a running executable fails with "Text file
+  busy"; a rename does not, and a failed download or checksum leaves the installed binary intact);
+  it fails with a clear message on a non-2xx response or checksum mismatch, and refuses to run
+  unless `uname -m` is `aarch64`; it
   takes flags `--hub-url` (required), `--port`, `--host`, `--version` (overrides the baked-in
   `RELEASE_TAG` to install a different release); writes the env file and the unit; runs
   `daemon-reload`; `enable --now` or `restart` if already installed; idempotent; prints status.

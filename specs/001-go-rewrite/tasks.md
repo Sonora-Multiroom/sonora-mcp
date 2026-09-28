@@ -431,13 +431,19 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   moved): `GOWORK=off GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "-X
   github.com/Sonora-Multiroom/sonora-mcp/internal/version.Version=1.1.0-rc.1" -o dist/pi/sonora-mcp-linux-arm64
   ./cmd/sonora-mcp` succeeds; record the binary size for the PR description (Principle VI)
-- [ ] T060a [US5] Publish a **prerelease** for Pi validation (FR-017c), not the final release: the
-  feature branch still depends on a sonora-cli pseudo-version, so `v1.1.0` is only cut from `main`
-  (T072). Tag the current feature-branch commit `v1.1.0-rc.1`, push the tag, then
-  `gh release create v1.1.0-rc.1 dist/pi/sonora-mcp-linux-arm64 --title v1.1.0-rc.1 --prerelease`
-  (asset name `sonora-mcp-linux-arm64`; the repo is public, so no credentials); leave `RELEASE_TAG`
-  in `install.sh` unchanged; confirm `curl -fsSL -o /dev/null -w '%{http_code}'
-  https://github.com/Sonora-Multiroom/sonora-mcp/releases/download/v1.1.0-rc.1/sonora-mcp-linux-arm64`
+- [X] T060b [US5] Release with GoReleaser as in sonora-cli, without Scoop: `.goreleaser.yaml`
+  (linux/darwin/windows × amd64/arm64, `CGO_ENABLED=0`, `-s -w`, version ldflag, tar.gz/zip
+  archives, `checksums.txt`, `prerelease: auto`), `.github/workflows/release.yml` (on `v*` tags),
+  `.github/workflows/test.yml` (gofmt, vet, `go test -race` on PRs) and `release.sh`; switch
+  `deploy/pi/install.sh` to download `sonora-mcp_<version>_linux_arm64.tar.gz`, verify it against
+  `checksums.txt` and extract the binary. Validated with `goreleaser check`, a snapshot build, and
+  `install.sh` run in an arm64 container against the snapshot (install, re-run, unknown tag,
+  tampered archive)
+- [ ] T060a [US5] Publish a **prerelease** for Pi validation (FR-017c), not the final release:
+  `v1.1.0` is only cut from `main` (T072). Tag the current feature-branch commit `v1.1.0-rc.1` and
+  push the tag; the release workflow (T060b) publishes it as a prerelease. Leave `RELEASE_TAG` in
+  `install.sh` unchanged; confirm `curl -fsSL -o /dev/null -w '%{http_code}'
+  https://github.com/Sonora-Multiroom/sonora-mcp/releases/download/v1.1.0-rc.1/sonora-mcp_1.1.0-rc.1_linux_arm64.tar.gz`
   returns `200`
 - [ ] T061 [US5] Validate on the Pi per quickstart.md §8 with `--version v1.1.0-rc.1` (install,
   `/health`, re-run with another port, kill → restart, reboot → running); time the install (SC-008:
@@ -501,10 +507,8 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   including VS Code with the existing `.vscode/mcp.json`; record results in the PR description
 - [ ] T072 Cut the `v1.1.0` release from `main` (FR-017c; constitution: dependency pinning). Before
   merge, as the last commit of the PR: set `RELEASE_TAG="v1.1.0"` in `deploy/pi/install.sh`. After
-  the PR is merged: tag the merge commit on `main` `v1.1.0` and push the tag; from a checkout of that
-  tag cross-build with `-ldflags "-X …/internal/version.Version=1.1.0"` (as in T060);
-  `gh release create v1.1.0 dist/pi/sonora-mcp-linux-arm64 --title v1.1.0`; confirm the download URL
-  returns `200`; re-run `install.sh` on the Pi **without** `--version` and check `/health` reports
+  the PR is merged: tag `main` `v1.1.0` with `release.sh` (the release workflow builds and
+  publishes it); confirm the `sonora-mcp_1.1.0_linux_arm64.tar.gz` download URL returns `200`; re-run `install.sh` on the Pi **without** `--version` and check `/health` reports
   `1.1.0`; delete the `v1.1.0-rc.1` prerelease and tag
 
 ---

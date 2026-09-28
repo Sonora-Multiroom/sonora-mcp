@@ -101,15 +101,14 @@ restart), then press Ctrl+C. Expect the call to complete or time out, then exit 
 On the development machine:
 
 ```powershell
-$env:GOWORK="off"; $env:GOOS="linux"; $env:GOARCH="arm64"; $env:CGO_ENABLED="0"   # build from go.mod, not the local sonora-cli checkout
-go build -ldflags "-X github.com/Sonora-Multiroom/sonora-mcp/internal/version.Version=1.1.0-rc.1" -o dist/pi/sonora-mcp-linux-arm64 ./cmd/sonora-mcp
-Remove-Item Env:GOWORK, Env:GOOS, Env:GOARCH, Env:CGO_ENABLED
-gh release create v1.1.0-rc.1 dist/pi/sonora-mcp-linux-arm64 --title v1.1.0-rc.1 --prerelease   # T060a
+git tag -a v1.1.0-rc.1 -m "Release v1.1.0-rc.1"; git push origin v1.1.0-rc.1   # T060a: the release workflow publishes the prerelease
+gh run watch (gh run list --workflow release.yml --limit 1 --json databaseId --jq '.[0].databaseId')
 scp deploy/pi/install.sh pi@multiroom.lan:~/install.sh
 ```
 
 `install.sh` is the only file that needs to reach the Pi (SC-005, SC-008); it downloads the
-binary itself from a GitHub Release (its baked-in `RELEASE_TAG`, or `--version`), so the Pi needs
+linux/arm64 archive itself from a GitHub Release (its baked-in `RELEASE_TAG`, or `--version`) and
+verifies it against the release's `checksums.txt`, so the Pi needs
 outbound internet access to `github.com` during install (not afterward). Before merge, validate
 the prerelease with `--version v1.1.0-rc.1`; final releases are cut from `main` only (T072).
 

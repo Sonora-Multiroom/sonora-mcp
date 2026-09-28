@@ -56,16 +56,22 @@ Always `200 OK` while the server runs; `Content-Type: application/json`.
 
 ```
 go build -ldflags "-X github.com/Sonora-Multiroom/sonora-mcp/internal/version.Version=<v>" ./cmd/sonora-mcp
-GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "..." -o dist/pi/sonora-mcp-linux-arm64 ./cmd/sonora-mcp
-gh release create <tag> dist/pi/sonora-mcp-linux-arm64 --title <tag>   # once per release
 ```
 
-Without `-ldflags` the version is `dev`. Releases are tagged on `main` only, after the merge gate
-passes with a tagged sonora-cli. `deploy/pi/install.sh`'s `RELEASE_TAG` is bumped to `<tag>` in
-the commit that gets tagged, so the script always matches the release it ships with (T072).
-Pre-merge builds are published as GitHub prereleases (`<tag>-rc.N`, `--prerelease`) and installed
-with `--version`; `RELEASE_TAG` never points at one (T060a). `install.sh` is the single file copied
-to the Pi.
+Without `-ldflags` the version is `dev`.
+
+Releases are built by GoReleaser (`.goreleaser.yaml`, as in sonora-cli, without Scoop). Pushing a
+`v*` tag runs `.github/workflows/release.yml`, which builds linux, darwin and windows for amd64 and
+arm64 (`CGO_ENABLED=0`, `-s -w`, version from the tag) and publishes a GitHub Release with
+`sonora-mcp_<version>_<os>_<arch>.tar.gz` (`.zip` on windows) and `checksums.txt`. Tags with a
+pre-release suffix (`v1.1.0-rc.1`) are published as prereleases. `release.sh` tags `main` and pushes
+the tag. `.github/workflows/test.yml` runs `gofmt`, `go vet` and `go test -race` on pull requests.
+
+Releases are tagged on `main` only, after the merge gate passes with a tagged sonora-cli.
+`deploy/pi/install.sh`'s `RELEASE_TAG` is bumped to `<tag>` in the commit that gets tagged, so the
+script always matches the release it ships with (T072). Pre-merge builds are published as
+prereleases (`<tag>-rc.N`, tagged on the feature branch) and installed with `--version`;
+`RELEASE_TAG` never points at one (T060a). `install.sh` is the single file copied to the Pi.
 
 ## Pi service (`deploy/pi/`)
 
@@ -82,12 +88,12 @@ sudo ./install.sh --hub-url <url> [--port <port>] [--host <address>] [--version 
 
 | Effect | Detail |
 |---|---|
-| Binary | Downloaded with `curl -fsSL` from `https://github.com/Sonora-Multiroom/sonora-mcp/releases/download/<tag>/sonora-mcp-linux-arm64` (`<tag>` = `--version` if given, else the script's baked-in `RELEASE_TAG`) to a temp file in `/usr/local/bin`, set to mode 0755, then renamed (`mv -f`) onto `/usr/local/bin/sonora-mcp`. The rename works while the old binary is running, and a failed download leaves it untouched |
+| Binary | Downloads `sonora-mcp_<version>_linux_arm64.tar.gz` and `checksums.txt` with `curl -fsSL` from `https://github.com/Sonora-Multiroom/sonora-mcp/releases/download/<tag>/` (`<tag>` = `--version` if given, else the script's baked-in `RELEASE_TAG`; `<version>` = `<tag>` without the leading `v`), checks the archive's SHA-256 against `checksums.txt`, extracts `sonora-mcp`, copies it to a temp file in `/usr/local/bin`, sets mode 0755, then renames it (`mv -f`) onto `/usr/local/bin/sonora-mcp`. The rename works while the old binary is running, and a failed download or checksum leaves it untouched |
 | Config | `/etc/default/sonora-mcp` with `SONORA_HUB_URL`, `SONORA_PORT`, `SONORA_HOST_ARG` |
 | Unit | Written from the script's embedded heredoc to `/etc/systemd/system/sonora-mcp.service` |
 | Service | `daemon-reload`; enabled at boot; started, or restarted if already running |
 | Re-run | Overwrites binary, config and unit; restarts; never duplicates |
-| Exit | 0 on success with `systemctl status` summary; non-zero with a message if not root, `--hub-url` missing, systemd or `curl` absent, the OS is not 64-bit ARM (`uname -m` ≠ `aarch64`), or the download fails (network error or non-2xx, e.g. unknown tag) |
+| Exit | 0 on success with `systemctl status` summary; non-zero with a message if not root, `--hub-url` missing, systemd or `curl` absent, the OS is not 64-bit ARM (`uname -m` ≠ `aarch64`), the download fails (network error or non-2xx, e.g. unknown tag), or the checksum does not match |
 
 The embedded systemd unit runs `sonora-mcp` with the configured flags as a dynamic unprivileged
 user, after the network is up. Restarts on failure after 2 seconds. Stopped with SIGTERM, which
