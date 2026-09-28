@@ -5,3 +5,17 @@ dist/
 *.d.ts.map
 *.js.map
 !.gitignore
+
+# Project-specific
+.claude/skills/speckit-**
+.gemini/commands/speckit.**
+.github/agents/speckit.**
+.github/prompts/speckit.**
+.kilocode/workflows/speckit.**
+.specify/*
+!.specify/archive/
+!.specify/memory/
+!.specify/feature.json
+specs/archive/
+specs/drafts/
+specs/*/checklists/requirements.md
