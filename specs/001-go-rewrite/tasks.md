@@ -66,6 +66,9 @@ written first and must fail before its implementation task starts. All tests run
 - [ ] T003a [P] Commit the design note `docs/future/go-rewrite-shared-hub-client.md` on its own
   (`docs:` commit) so the references to it from spec.md, the constitution's Sync Impact Report and
   plan decisions resolve after merge
+- [ ] T003b [P] Commit `.vscode/mcp.json` on its own (`chore:` commit; it holds only
+  `http://localhost:3001/mcp`, no secrets) so the reference client configuration used by T070 and
+  SC-001 is in the repository; leave `.vscode/settings.json` untracked
 
 ---
 
@@ -170,13 +173,13 @@ starts and lists tools. No tool exists yet at the end of this phase.
   mounting `mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return s },
   &mcp.StreamableHTTPOptions{Stateless: true, PropagateRequestCancellation: true})` at `/mcp`
   (research R6; no CORS headers; SDK localhost protection left on) and 404 for everything else
-- [ ] T019a [P] Write `cmd/sonora-mcp/main_test.go` for `run(args []string, stdout, stderr
-  io.Writer) int` (spec US5 AS1–2, FR-013): `-h` and `--help` → usage on stdout, returns 0;
+- [ ] T019a [P] Write `cmd/sonora-mcp/main_test.go` for `run(ctx context.Context, args []string,
+  stdout, stderr io.Writer) int` (spec US5 AS1–2, FR-013; `ctx` lets T053 stand in for a stop signal): `-h` and `--help` → usage on stdout, returns 0;
   no `--multiroom-url` → usage on stderr, returns 2; invalid `--port` → message + usage on
   stderr, returns 2; `--port` already bound by the test (listen error) → message on stderr,
   returns 1
 - [ ] T020 Implement `cmd/sonora-mcp/main.go` to pass T019a: `main` only calls
-  `os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))`; `run` does `config.Parse(args)` (help → usage
+  `os.Exit(run(context.Background(), os.Args[1:], os.Stdout, os.Stderr))`; `run` does `config.Parse(args)` (help → usage
   to stdout, return 0; error → message + usage to stderr, return 2); `hub.NewClient()`; `mcp.NewServer` with
   `Implementation{Name: "sonora-mcp", Version: version.Version}`; `tools.Register`;
   `AddReceivingMiddleware(tools.LogToolCalls(logger))`; slog text logger on stderr; startup line
@@ -339,11 +342,18 @@ never answering; plus a concurrent healthy call (spec US4).
   1 s; meanwhile a concurrent `getMasterMute` on a non-delayed route succeeds (FR-011, SC-003)
 - [ ] T048 [P] [US4] Write `internal/tools/cancel_test.go`: cancelling the client call's context while
   the fake hub delays causes the fake hub to observe its request context cancelled (FR-007)
+- [ ] T048a [P] [US4] Extend `internal/server/server_test.go` (from T018) with cancellation over
+  the real `/mcp` handler (FR-007, US4 AS5, research R6): build the server with `tools.Register`
+  against an `httptest` hub handler that blocks until its request context is done (a local helper;
+  the `internal/tools` fake hub is test-only and not importable); connect with
+  `mcp.StreamableClientTransport`, assert the negotiated protocol version is ≥ `2026-07-28`, call
+  `getMasterMute`, cancel the call's context, and assert the hub handler observes cancellation well
+  before the 5 s client timeout. Fails if `PropagateRequestCancellation` is dropped from T019
 
 ### Implementation
 
-- [ ] T049 [US4] Make T046–T048 pass, changing only `internal/tools/errors.go` and
-  `internal/tools/register.go` (keep error text `"<Category>: <message>"`; never return protocol
+- [ ] T049 [US4] Make T046–T048a pass, changing only `internal/tools/errors.go`,
+  `internal/tools/register.go` and, for T048a, `internal/server/server.go` (keep error text `"<Category>: <message>"`; never return protocol
   errors for hub failures); if they already pass, record that and change nothing
 
 **Checkpoint**: error behaviour verified across categories, timeout, cancellation and concurrency.
@@ -366,7 +376,9 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
 - [ ] T051 [P] [US5] Write `internal/server/health_test.go`: `GET /health` → 200,
   `Content-Type: application/json`, body `{"status":"ok","server":"sonora-mcp","version":<v>,
   "hub":"reachable"}` when `hub.GetMasterMute` succeeds; `"hub":"unreachable"` (still 200) when the
-  fake hub is down or delays 5 s, answered in ≤ 2.5 s (2 s check bound)
+  fake hub is down or delays 5 s, answered in ≤ 2.5 s (the 2 s bound of spec US5 AS6 / SC-005 is
+  enforced by the `context.WithTimeout` in T055; the extra 0.5 s only absorbs test-scheduling
+  jitter)
 - [ ] T052 [P] [US5] Write `internal/server/shutdown_test.go`: `Run(ctx, srv)` serving on a free port;
   start a tool call against a hub delayed 300 ms, cancel `ctx` (simulated signal); the call completes
   successfully, new connections are refused, `Run` returns nil within 6 s
@@ -375,7 +387,9 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   via the same constructor `main` uses and compare); the `*http.Client` that constructor passes to
   the tools and `/health` has `0 < Timeout ≤ 5s` (it comes from `hub.NewClient()`; keeps every tool
   under SC-003's 10 s and inside the 6 s shutdown drain); `--host "not a host!"` → message + usage on
-  stderr, returns 2 (FR-013a)
+  stderr, returns 2 (FR-013a); stop-signal exit status (FR-017a, US5 AS9): `run` started with a
+  cancellable `ctx` and a free `--port` serves `/health`, and after `ctx` is cancelled it returns
+  0 within 6 s
 
 ### Implementation
 
@@ -387,7 +401,8 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   `internal/server/server.go` (pass T052: `ListenAndServe` in a goroutine; on `ctx.Done()`
   `srv.Shutdown` with a 6 s deadline; `http.ErrServerClosed` is not an error)
 - [ ] T057 [US5] Update `cmd/sonora-mcp/main.go`: listen on `cfg.ListenAddr()`;
-  `signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)`; `server.Run`; `run` returns 0 after drain; log
+  `signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)` on the `ctx` passed to `run`;
+  `server.Run`; `run` returns 0 after drain (pass T053); log
   shutdown; factor server construction into a function used by T053
 - [ ] T058 [US5] Write the embedded systemd unit inside `deploy/pi/install.sh` per
   contracts/server.md and research R13 (a heredoc, not a separate file):
@@ -443,7 +458,12 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   names equal exactly the 24 names in contracts/tools.md (no more, no fewer)
 - [ ] T063 [US6] Drift check (manual, not committed): set `setOutputVolume`'s maximum to 150, confirm
   `go test ./internal/tools/` fails naming `setOutputVolume`, `volume`, `maximum`, 150 vs 100; revert
-- [ ] T064 [US6] Delete Node.js sources and tooling: `git rm -r src/ package.json package-lock.json
+- [ ] T064 [US6] Delete Node.js sources and tooling. First run `git status --short`: tracked Node
+  files must have no local changes, or `git rm` refuses them. The known case is an uncommitted,
+  never-shipped `openapi:update` script in `package.json` and its "Updating the API Spec" section
+  in `README.md` (constitution: legacy freeze); discard both with
+  `git restore package.json README.md` (the script and README section are removed here and in
+  T067 anyway). Then `git rm -r src/ package.json package-lock.json
   tsconfig.json openapi.json specs/sonora-mcp-plan.md` (the last is the Node-era plan, superseded
   by this feature's spec and plan; tracked files only — `git rm` aborts without removing anything if a
   path is untracked); then delete the untracked `scripts/update-openapi.mjs` (and `scripts/` if it
@@ -465,9 +485,12 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
 
 ## Phase 9: Polish & merge readiness
 
-- [ ] T068 Run the merge gate from quickstart.md §2 on Windows: `gofmt -l .` empty, `go vet ./...`,
-  `go build ./...`, `go test ./...` (with the network disabled once, SC-006; includes the T015a
-  architecture check). Then run `go vet ./...` and `go test -race ./...` on Linux (WSL or a
+- [ ] T068 Run the merge gate from quickstart.md §2 on Windows with `GOWORK=off` (constitution
+  Workflow §4): `gofmt -l .` empty, `go vet ./...`, `go build ./...`, `go test ./...` (with the
+  network disabled once, SC-006; includes the T015a architecture check); also build the Windows
+  executable (FR-017): `go build -ldflags "-X
+  github.com/tiger-seo/sonora-mcp/internal/version.Version=1.1.0-rc.1" -o sonora-mcp.exe
+  ./cmd/sonora-mcp` and check `sonora-mcp.exe --help` exits 0. Then run `go vet ./...` and `go test -race ./...` on Linux (WSL or a
   `golang:1.27` container with the workspace mounted) to meet FR-019 / Principle V ("pass on
   Windows and Linux"); `-race` runs only there because it needs cgo and a C toolchain, which the
   Windows setup does not have. Record both results in the PR description
@@ -509,12 +532,12 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
 
 ### Parallel opportunities
 
-- Setup: T002, T003, T003a.
+- Setup: T002, T003, T003a, T003b.
 - Foundational: T004, T005, T006, T008, T010, T011, T015a, T016, T018, T019a (all separate files).
 - US1: T021–T025 together; then T026–T030 together (separate files).
 - US2: T032–T035; then T036–T039.
 - US3: T040–T042; then T043–T045.
-- US4: T046–T048.
+- US4: T046–T048a.
 - US5: T050–T053; T058 then T059 (same file, `deploy/pi/install.sh`), anytime in the phase.
 - US5 can run alongside US2–US4 once US1 is done (different packages).
 - T065 and T071 were removed (the untracked `run*.sh` launchers are deleted in T064; the `docs/future/`

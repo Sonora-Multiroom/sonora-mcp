@@ -110,7 +110,9 @@ than recalled. The hub facts were checked against sonora-cli branch `010-public-
 - **Findings**: in stateless mode GET/DELETE on `/mcp` return 405 (clients POST only; matches the Node
   server's stateless setup). `PropagateRequestCancellation` ties the handler context to the HTTP
   request only for protocol ≥ 2026-07-28; for older protocol versions a disconnect is not propagated,
-  and the per-call hub timeout (5 s) is the bound. The cancellation test uses the new protocol path.
+  and the per-call hub timeout (5 s) is the bound. Two tests cover cancellation: one over in-memory
+  transports (tool handler → hub call), and one over the real `/mcp` handler with a Streamable HTTP
+  client on protocol ≥ 2026-07-28, which fails if `PropagateRequestCancellation` is dropped.
 - **Localhost protection**: enabled by default in the SDK (requests via 127.0.0.1 with a non-localhost
   `Host` are rejected with 403). Keep it; LAN clients connecting via the Pi's LAN address are
   unaffected.

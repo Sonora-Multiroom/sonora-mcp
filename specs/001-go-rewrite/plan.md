@@ -51,7 +51,7 @@ one systemd unit, one install script
 | I. Every hub call through `hub`; no local hub types | Tool handlers call `hub.*` functions only; results are `hub` types (lists wrapped in an envelope struct, not redefined) | Pass |
 | I. Missing hub behaviour added to `hub` first | `CreateInputRequest` optional booleans fixed in sonora-cli before tagging (R7), not patched here | Pass (prerequisite task) |
 | I. Conformance test against `api.Spec`; no local `openapi.json` | `internal/tools/conformance_test.go` (R4); `openapi.json` and `update-openapi.mjs` removed | Pass |
-| II. Stable names, descriptions, schema validation, annotations | 24 names from the inventory; descriptions per tool and field; schemas validated before handler; annotations per Kind ([data-model.md](data-model.md)) | Pass |
+| II. Stable names, descriptions, schema validation, annotations | 24 names from the inventory; descriptions per tool and field; descriptions via `jsonschema` tags, other constraints set on the derived schema at registration (constitution 1.0.1, R3); schemas validated before handler; annotations per Kind ([data-model.md](data-model.md)) | Pass |
 | II. MAJOR bump on tool-surface breaks | No rename, removal or incompatible input change; release 1.1.0 (R11) | Pass |
 | III. No cached state; stateless transport; explicit hub URL | Shared `*mcp.Server`, `Stateless: true`; `--multiroom-url` required; health check does one live call, stores nothing | Pass |
 | IV. Timeout via `hub.NewClient`; request context passed | One `hub.NewClient()` client; handlers receive the MCP request context; `PropagateRequestCancellation` (R6) | Pass (older-protocol clients: timeout bound only, R6) |
@@ -93,7 +93,7 @@ go.mod                         # module github.com/tiger-seo/sonora-mcp; go 1.27
 go.sum
 cmd/sonora-mcp/
 ├── main.go                    # parse config, build server, run until signal, exit codes
-└── main_test.go               # run(args, stdout, stderr) exit codes; single version source
+└── main_test.go               # run(ctx, args, stdout, stderr) exit codes; single version source
 internal/
 ├── config/
 │   ├── config.go              # flag parsing + validation (--multiroom-url, --port, --host), usage
