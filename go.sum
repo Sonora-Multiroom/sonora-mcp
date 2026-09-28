@@ -1,0 +1,4 @@
+github.com/Sonora-Multiroom/sonora-cli v0.0.18-0.20260927223403-3ee73698f2ae h1:KSojgrH09BGFVBXAPRixPSlfIobCtnmT9UI/VT13wOg=
+github.com/Sonora-Multiroom/sonora-cli v0.0.18-0.20260927223403-3ee73698f2ae/go.mod h1:SzoNCuCaDWI5QXoEVQyuELf+38ZxrzYw8mu1m52ur7Q=
+github.com/modelcontextprotocol/go-sdk v1.8.0 h1:KIvahhYqwtbeniWVPs3TcXEA7b8jEtwfBpOTAI+Urx4=
+github.com/modelcontextprotocol/go-sdk v1.8.0/go.mod h1:dL7u98E/zjJTGzEq+j30jQ8K2k1mb6LeAH4inEcSGts=
