@@ -200,42 +200,42 @@ and each returns every field the spec defines (spec US1).
 
 ### Tests (write first, must fail)
 
-- [ ] T021 [P] [US1] Write read-tool tests in `internal/tools/inputs_read_test.go`: `listInputs`
+- [X] T021 [P] [US1] Write read-tool tests in `internal/tools/inputs_read_test.go`: `listInputs`
   (no args → `GET /api/v2/inputs` without `includeDisabled`; `includeDisabled: true` →
   `?includeDisabled=true`; result `{"inputs": [...]}` with all Input fields) and `getInput`
   (`GET /api/v2/inputs/{inputId}`; an ID with a space, a `/` and a `#` reaches the hub
   path-escaped; result is the Input); both annotated read-only; plus one `listInputs` call through a
   harness built with a trailing-slash hub URL (`fakeHub.URL + "/"`) reaching the hub at exactly
   `/api/v2/inputs` (spec US5 AS8)
-- [ ] T022 [P] [US1] Write `internal/tools/outputs_read_test.go`: `listOutputs`, `getOutput`, same
+- [X] T022 [P] [US1] Write `internal/tools/outputs_read_test.go`: `listOutputs`, `getOutput`, same
   pattern as T021 (`GET /api/v2/outputs`, `GET /api/v2/outputs/{outputId}`, wrapper `outputs`); the
   default call sends no `includeDisabled` query parameter and `includeDisabled: true` sends
   `?includeDisabled=true`; the fake hub returns only output A for the default call and A plus the
   disabled B for `?includeDisabled=true`, and each result contains exactly the outputs the hub
   returned (filtering is the hub's job; spec US1 AS2)
-- [ ] T023 [P] [US1] Write `internal/tools/groups_read_test.go`: `listGroups`, `getGroup`
+- [X] T023 [P] [US1] Write `internal/tools/groups_read_test.go`: `listGroups`, `getGroup`
   (`GET /api/v2/groups`, `GET /api/v2/groups/{groupId}`, wrapper `groups`)
-- [ ] T024 [P] [US1] Write `internal/tools/routes_read_test.go`: `listRoutes` sends only the filters
+- [X] T024 [P] [US1] Write `internal/tools/routes_read_test.go`: `listRoutes` sends only the filters
   given (none; `status` only; all three `status`, `inputId`, `targetId`); `status` outside
   "enum `STARTING` | `ACTIVE` | `STOPPING` | `STOPPED` | `FAILED`" is rejected with no hub request;
   wrapper `routes`; `getRoute` (`GET /api/v2/routes/{routeId}`) returns every Route field including
   `startedAt: null`
-- [ ] T025 [P] [US1] Write `internal/tools/mastermute_read_test.go`: `getMasterMute` (no inputs,
+- [X] T025 [P] [US1] Write `internal/tools/mastermute_read_test.go`: `getMasterMute` (no inputs,
   `GET /api/v2/master-mute`, result `{"muted": false}`), read-only
 
 ### Implementation
 
-- [ ] T026 [P] [US1] Implement `listInputs`, `getInput` in `internal/tools/inputs.go` (inputs:
+- [X] T026 [P] [US1] Implement `listInputs`, `getInput` in `internal/tools/inputs.go` (inputs:
   `includeDisabled?: bool`; `inputId` "string, `minLength: 1`"; `hub.ListInputs`, `hub.GetInput`);
   descriptions per Principle II
-- [ ] T027 [P] [US1] Implement `listOutputs`, `getOutput` in `internal/tools/outputs.go`
+- [X] T027 [P] [US1] Implement `listOutputs`, `getOutput` in `internal/tools/outputs.go`
   (`hub.ListOutputs`, `hub.GetOutput`)
-- [ ] T028 [P] [US1] Implement `listGroups`, `getGroup` in `internal/tools/groups.go`
+- [X] T028 [P] [US1] Implement `listGroups`, `getGroup` in `internal/tools/groups.go`
   (`hub.ListGroups`, `hub.GetGroup`)
-- [ ] T029 [P] [US1] Implement `listRoutes`, `getRoute` in `internal/tools/routes.go`
+- [X] T029 [P] [US1] Implement `listRoutes`, `getRoute` in `internal/tools/routes.go`
   (`hub.ListRoutes(ctx, c, url, status, inputID, targetID)`, `hub.GetRoute`)
-- [ ] T030 [P] [US1] Implement `getMasterMute` in `internal/tools/playback.go` (`hub.GetMasterMute`)
-- [ ] T031 [US1] Wire the five `registerX` functions into `Register` in `internal/tools/tools.go`;
+- [X] T030 [P] [US1] Implement `getMasterMute` in `internal/tools/playback.go` (`hub.GetMasterMute`)
+- [X] T031 [US1] Wire the five `registerX` functions into `Register` in `internal/tools/tools.go`;
   run `go test ./internal/tools/` including the conformance test for the 10 tools
 
 **Checkpoint**: the MVP. 10 read-only tools pass their tests and the conformance check.
