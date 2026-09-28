@@ -439,7 +439,7 @@ an assistant with the existing config, request `/health` (spec US5, quickstart Â
   `checksums.txt` and extract the binary. Validated with `goreleaser check`, a snapshot build, and
   `install.sh` run in an arm64 container against the snapshot (install, re-run, unknown tag,
   tampered archive)
-- [ ] T060a [US5] Publish a **prerelease** for Pi validation (FR-017c), not the final release:
+- [X] T060a [US5] Publish a **prerelease** for Pi validation (FR-017c), not the final release:
   `v1.1.0` is only cut from `main` (T072). Tag the current feature-branch commit `v1.1.0-rc.1` and
   push the tag; the release workflow (T060b) publishes it as a prerelease. Leave `RELEASE_TAG` in
   `install.sh` unchanged; confirm `curl -fsSL -o /dev/null -w '%{http_code}'
