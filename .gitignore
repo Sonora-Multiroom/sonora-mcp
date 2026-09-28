@@ -1,7 +1,20 @@
-node_modules/
-dist/
-*.js
-*.d.ts
-*.d.ts.map
-*.js.map
-!.gitignore
+# Go
+/sonora-mcp
+/sonora-mcp.exe
+/dist/
+go.work
+go.work.sum
+
+# Project-specific
+.claude/skills/speckit-**
+.gemini/commands/speckit.**
+.github/agents/speckit.**
+.github/prompts/speckit.**
+.kilocode/workflows/speckit.**
+.specify/*
+!.specify/archive/
+!.specify/memory/
+!.specify/feature.json
+specs/archive/
+specs/drafts/
+specs/*/checklists/requirements.md
