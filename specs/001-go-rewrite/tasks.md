@@ -331,18 +331,18 @@ never answering; plus a concurrent healthy call (spec US4).
 
 ### Tests (write first, must fail if behaviour is missing)
 
-- [ ] T046 [P] [US4] Write `internal/tools/errors_scenarios_test.go`: `getOutput garage` with hub 404
+- [X] T046 [P] [US4] Write `internal/tools/errors_scenarios_test.go`: `getOutput garage` with hub 404
   → `NotFound:` and the message names `garage`; `setOutputVolume` with hub 400 problem
   `{"detail":"output is disabled"}` → `Validation: output is disabled`; `playback` with 503 →
   `ServiceUnavailable:`; `listOutputs` with body `not json` → `MalformedResponse:`; `getOutput`
   with a wrong-shape JSON body (`[]`, and `{"volume":"loud"}`) → `MalformedResponse:` with no
   partial data in the result (spec Edge Cases); `listOutputs` against a closed port → `Network:`
-- [ ] T047 [P] [US4] Write `internal/tools/timeout_test.go`: with the harness given an
+- [X] T047 [P] [US4] Write `internal/tools/timeout_test.go`: with the harness given an
   `http.Client{Timeout: 200ms}` and a fake-hub delay of 2 s, `listOutputs` returns `Timeout:` in under
   1 s; meanwhile a concurrent `getMasterMute` on a non-delayed route succeeds (FR-011, SC-003)
-- [ ] T048 [P] [US4] Write `internal/tools/cancel_test.go`: cancelling the client call's context while
+- [X] T048 [P] [US4] Write `internal/tools/cancel_test.go`: cancelling the client call's context while
   the fake hub delays causes the fake hub to observe its request context cancelled (FR-007)
-- [ ] T048a [P] [US4] Extend `internal/server/server_test.go` (from T018) with cancellation over
+- [X] T048a [P] [US4] Extend `internal/server/server_test.go` (from T018) with cancellation over
   the real `/mcp` handler (FR-007, US4 AS5, research R6): build the server with `tools.Register`
   against an `httptest` hub handler that blocks until its request context is done (a local helper;
   the `internal/tools` fake hub is test-only and not importable); connect with
@@ -352,7 +352,7 @@ never answering; plus a concurrent healthy call (spec US4).
 
 ### Implementation
 
-- [ ] T049 [US4] Make T046–T048a pass, changing only `internal/tools/errors.go`,
+- [X] T049 [US4] Make T046–T048a pass, changing only `internal/tools/errors.go`,
   `internal/tools/register.go` and, for T048a, `internal/server/server.go` (keep error text `"<Category>: <message>"`; never return protocol
   errors for hub failures); if they already pass, record that and change nothing
 
