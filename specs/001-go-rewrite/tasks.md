@@ -128,7 +128,9 @@ starts and lists tools. No tool exists yet at the end of this phase.
   operation exists in the spec; every input property maps to a path/query parameter or a
   request-body property of that operation; `required`, `enum`, `minimum`, `maximum`, `minLength`,
   `pattern` equal the spec's; failures name tool, field, tool value and spec value. Spec
-  `["boolean","null"]`-style types count as "optional" for `required`
+  `["boolean","null"]`-style types count as "optional" for `required`. Also (FR-003), via the T005
+  harness's `ListTools`: every tool has a non-empty description and every input-schema property
+  has a non-empty `description`; failures name the tool and field
 
 ### Minimal config, server and entry point (tests first)
 
@@ -178,9 +180,10 @@ and each returns every field the spec defines (spec US1).
   (`GET /api/v2/inputs/{inputId}`; an ID with a space, a `/` and a `#` reaches the hub
   path-escaped; result is the Input); both annotated read-only
 - [ ] T022 [P] [US1] Write `internal/tools/outputs_read_test.go`: `listOutputs`, `getOutput`, same
-  pattern as T021 (`GET /api/v2/outputs`, `GET /api/v2/outputs/{outputId}`, wrapper `outputs`); with
-  outputs A enabled and B disabled served by the fake hub for the default call, the result contains the
-  hub's list as returned
+  pattern as T021 (`GET /api/v2/outputs`, `GET /api/v2/outputs/{outputId}`, wrapper `outputs`); the
+  default call sends no `includeDisabled` query parameter and `includeDisabled: true` sends
+  `?includeDisabled=true`; with outputs A enabled and B disabled served by the fake hub for the
+  default call, the result contains the hub's list as returned (filtering is the hub's job)
 - [ ] T023 [P] [US1] Write `internal/tools/groups_read_test.go`: `listGroups`, `getGroup`
   (`GET /api/v2/groups`, `GET /api/v2/groups/{groupId}`, wrapper `groups`)
 - [ ] T024 [P] [US1] Write `internal/tools/routes_read_test.go`: `listRoutes` sends only the filters
@@ -361,8 +364,8 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   ${SONORA_HUB_URL} --port ${SONORA_PORT} $SONORA_HOST_ARG`, `Restart=on-failure`, `RestartSec=2`,
   `NoNewPrivileges=yes`, `ProtectSystem=strict`, `ProtectHome=yes`, `WantedBy=multi-user.target`
 - [ ] T059 [US5] (after T058, same file) Finish `deploy/pi/install.sh` (bash, `set -euo pipefail`)
-  per contracts/server.md: a `RELEASE_TAG="dev"` placeholder near the top (bumped by T060a per
-  release); flags `--hub-url` (required), `--port` (default 3001), `--host` (optional →
+  per contracts/server.md: a `RELEASE_TAG="dev"` placeholder near the top (set to the
+  release tag only on `main`, by T072); flags `--hub-url` (required), `--port` (default 3001), `--host` (optional →
   `SONORA_HOST_ARG=--host <addr>`), `--version` (overrides `RELEASE_TAG`); checks root, systemd
   and `curl` present; downloads the binary with `curl -fsSL -o /usr/local/bin/sonora-mcp
   https://github.com/tiger-seo/sonora-mcp/releases/download/<tag>/sonora-mcp-linux-arm64` (`<tag>`
@@ -372,17 +375,19 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   (idempotent on re-run); prints `systemctl --no-pager status sonora-mcp`; run `shellcheck` on the
   file if available
 - [ ] T060 [US5] Verify cross-build: `GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "-X
-  github.com/tiger-seo/sonora-mcp/internal/version.Version=1.1.0" -o dist/pi/sonora-mcp-linux-arm64
+  github.com/tiger-seo/sonora-mcp/internal/version.Version=1.1.0-rc.1" -o dist/pi/sonora-mcp-linux-arm64
   ./cmd/sonora-mcp` succeeds; record the binary size for the PR description (Principle VI)
-- [ ] T060a [US5] Cut the GitHub release the Pi installs from (FR-017c): tag the release commit
-  (e.g. `v1.1.0`), bump `RELEASE_TAG` in `deploy/pi/install.sh` to match in that same commit, push
-  the tag, then `gh release create v1.1.0 dist/pi/sonora-mcp-linux-arm64 --title v1.1.0` to attach
-  the binary as `sonora-mcp-linux-arm64` (the repo is public, so the download needs no
-  credentials); confirm `curl -fsSL -o /dev/null -w '%{http_code}'
-  https://github.com/tiger-seo/sonora-mcp/releases/download/v1.1.0/sonora-mcp-linux-arm64` returns
-  `200`
-- [ ] T061 [US5] Validate on the Pi per quickstart.md §8 (install, `/health`, re-run with another
-  port, kill → restart, reboot → running); note results in the PR description
+- [ ] T060a [US5] Publish a **prerelease** for Pi validation (FR-017c), not the final release: the
+  feature branch still depends on a sonora-cli pseudo-version, so `v1.1.0` is only cut from `main`
+  (T072). Tag the current feature-branch commit `v1.1.0-rc.1`, push the tag, then
+  `gh release create v1.1.0-rc.1 dist/pi/sonora-mcp-linux-arm64 --title v1.1.0-rc.1 --prerelease`
+  (asset name `sonora-mcp-linux-arm64`; the repo is public, so no credentials); leave `RELEASE_TAG`
+  in `install.sh` unchanged; confirm `curl -fsSL -o /dev/null -w '%{http_code}'
+  https://github.com/tiger-seo/sonora-mcp/releases/download/v1.1.0-rc.1/sonora-mcp-linux-arm64`
+  returns `200`
+- [ ] T061 [US5] Validate on the Pi per quickstart.md §8 with `--version v1.1.0-rc.1` (install,
+  `/health`, re-run with another port, kill → restart, reboot → running); time the install (SC-008:
+  ≤ 5 min) and the restart after kill and after reboot (≤ 1 min); note results in the PR description
 
 **Checkpoint**: operator stories verified locally and on the Pi.
 
@@ -400,7 +405,11 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
 - [ ] T063 [US6] Drift check (manual, not committed): set `setOutputVolume`'s maximum to 150, confirm
   `go test ./internal/tools/` fails naming `setOutputVolume`, `volume`, `maximum`, 150 vs 100; revert
 - [ ] T064 [US6] Delete Node.js sources and tooling: `git rm -r src/ package.json package-lock.json
-  tsconfig.json openapi.json scripts/update-openapi.mjs`; delete local `dist/` and `node_modules/`
+  tsconfig.json openapi.json specs/sonora-mcp-plan.md` (the last is the Node-era plan, superseded
+  by this feature's spec and plan; tracked files only — `git rm` aborts without removing anything if a
+  path is untracked); then delete the untracked `scripts/update-openapi.mjs` (and `scripts/` if it
+  is left empty), `dist/` and `node_modules/` from disk with plain `rm`; confirm with the
+  quickstart §9 `git ls-files` check and that `scripts/update-openapi.mjs` no longer exists
 - [ ] T065 [P] [US6] Replace `run.sh` and `run.dev.sh` contents with Go equivalents (`go run
   ./cmd/sonora-mcp --multiroom-url http://multiroom.lan:8080` for dev; `./sonora-mcp --multiroom-url
   …` for a built binary)
@@ -418,22 +427,33 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
 
 ## Phase 9: Polish & merge readiness
 
-- [ ] T068 Run the merge gate from quickstart.md §2: `gofmt -l .` empty, `go vet ./...`,
-  `go build ./...`, `go test -race ./...` (with the network disabled once, SC-006; includes the
-  T068a architecture check)
-- [ ] T068a Add `internal/tools/architecture_test.go` (FR-006, FR-008): using `go/parser`, scan
-  every non-test `.go` file in the package and fail if it calls `http.Get`, `http.Post`,
-  `http.Head`, `http.NewRequest` or references `http.DefaultClient` (all hub access MUST go
-  through `hub.*`, Principle I), or declares a package-level `var` holding a `hub` resource type
-  (Principle III — no cached hub state); this runs as part of `go test ./...`, so it needs no
-  separate merge-gate step
+- [ ] T068a Add `internal/tools/architecture_test.go` (FR-006, FR-008): using `go/parser`, walk
+  every non-test `.go` file under `internal/` and `cmd/` (from the module root, `../..`; this
+  covers `internal/server/health.go` and `main.go` too) and fail, naming file and line, if it calls
+  `http.Get`, `http.Post`, `http.Head`, `http.NewRequest` or references `http.DefaultClient` (all
+  hub access MUST go through `hub.*`, Principle I), or declares a package-level `var` holding a
+  `hub` resource type (Principle III — no cached hub state); this runs as part of `go test ./...`,
+  so it needs no separate merge-gate step
+- [ ] T068 Run the merge gate from quickstart.md §2 on Windows: `gofmt -l .` empty, `go vet ./...`,
+  `go build ./...`, `go test ./...` (with the network disabled once, SC-006; includes the T068a
+  architecture check written just before). Then run `go vet ./...` and `go test -race ./...` on Linux (WSL or a
+  `golang:1.27` container with the workspace mounted) to meet FR-019 / Principle V ("pass on
+  Windows and Linux"); `-race` runs only there because it needs cgo and a C toolchain, which the
+  Windows setup does not have. Record both results in the PR description
 - [ ] T069 After sonora-cli PR #19 is merged and tagged: `go get
-  github.com/Sonora-Multiroom/sonora-cli@<tag>`, `go mod tidy`, re-run the gate with `GOWORK=off`;
+  github.com/Sonora-Multiroom/sonora-cli@<tag>`, `go mod tidy`, re-run the T068 gate (Windows and Linux) with `GOWORK=off`;
   confirm `go.mod` has no pseudo-version or `replace` for sonora-cli (constitution: dependency pinning)
 - [ ] T070 Run the full quickstart.md validation (§3–§7) against the real hub and MCP Inspector,
   including VS Code with the existing `.vscode/mcp.json`; record results in the PR description
 - [ ] T071 [P] Update the checklist in `docs/future/go-rewrite-shared-hub-client.md` (phase 3 items
   done) and set its status line
+- [ ] T072 Cut the `v1.1.0` release from `main` (FR-017c; constitution: dependency pinning). Before
+  merge, as the last commit of the PR: set `RELEASE_TAG="v1.1.0"` in `deploy/pi/install.sh`. After
+  the PR is merged: tag the merge commit on `main` `v1.1.0` and push the tag; from a checkout of that
+  tag cross-build with `-ldflags "-X …/internal/version.Version=1.1.0"` (as in T060);
+  `gh release create v1.1.0 dist/pi/sonora-mcp-linux-arm64 --title v1.1.0`; confirm the download URL
+  returns `200`; re-run `install.sh` on the Pi **without** `--version` and check `/health` reports
+  `1.1.0`; delete the `v1.1.0-rc.1` prerelease and tag
 
 ---
 
@@ -448,7 +468,8 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
 - **US4 (6)** needs at least the tools it exercises (US1–US3).
 - **US5 (7)** depends on Foundational only; T055/T051 use `hub.GetMasterMute` directly, not the tool.
 - **US6 (8)**: T062 after US3; T064–T067 last, after the Go server is verified (US5 checkpoint).
-- **Polish (9)**: T069 is blocked on the sonora-cli tag.
+- **Polish (9)**: T069 is blocked on the sonora-cli tag. T072 is the last task: after T069–T071 and
+  the merge to `main`. T060a publishes only a prerelease; no final release is tagged off `main`.
 
 ### Within each phase
 

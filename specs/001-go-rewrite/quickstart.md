@@ -25,12 +25,18 @@ cd D:\projects-sonora\sonora-mcp
 gofmt -l .          # expect no output
 go vet ./...
 go build ./...
-go test -race ./... # expect PASS with the network disabled (SC-006); includes the T068a
-                     # architecture check (FR-006/FR-008: no direct net/http use or cached
-                     # hub state in internal/tools)
+go test ./...      # expect PASS with the network disabled (SC-006); includes the T068a
+                     # architecture check (FR-006/FR-008: no direct net/http hub calls or
+                     # cached hub state anywhere under internal/ or cmd/)
 ```
 
-Before merging, repeat with the workspace off and a tagged sonora-cli:
+Then on Linux (FR-019), in WSL or a `golang:1.27` container with the workspace mounted:
+
+```bash
+go vet ./... && go test -race ./...   # -race needs cgo, so it runs on Linux only
+```
+
+Before merging, repeat both runs with the workspace off and a tagged sonora-cli:
 
 ```powershell
 $env:GOWORK="off"; go build ./...; go test ./...; Remove-Item Env:GOWORK
@@ -96,23 +102,24 @@ On the development machine:
 
 ```powershell
 $env:GOOS="linux"; $env:GOARCH="arm64"; $env:CGO_ENABLED="0"
-go build -ldflags "-X github.com/tiger-seo/sonora-mcp/internal/version.Version=1.1.0" -o dist/pi/sonora-mcp-linux-arm64 ./cmd/sonora-mcp
+go build -ldflags "-X github.com/tiger-seo/sonora-mcp/internal/version.Version=1.1.0-rc.1" -o dist/pi/sonora-mcp-linux-arm64 ./cmd/sonora-mcp
 Remove-Item Env:GOOS, Env:GOARCH, Env:CGO_ENABLED
-gh release create v1.1.0 dist/pi/sonora-mcp-linux-arm64 --title v1.1.0   # once per release (T060a)
+gh release create v1.1.0-rc.1 dist/pi/sonora-mcp-linux-arm64 --title v1.1.0-rc.1 --prerelease   # T060a
 scp deploy/pi/install.sh pi@multiroom.lan:~/install.sh
 ```
 
 `install.sh` is the only file that needs to reach the Pi (SC-005, SC-008); it downloads the
-binary itself from the GitHub Release tagged in its `RELEASE_TAG`, so the Pi needs outbound
-internet access to `github.com` during install (not afterward).
+binary itself from a GitHub Release (its baked-in `RELEASE_TAG`, or `--version`), so the Pi needs
+outbound internet access to `github.com` during install (not afterward). Before merge, validate
+the prerelease with `--version v1.1.0-rc.1`; final releases are cut from `main` only (T072).
 
 On the Pi:
 
 ```bash
-sudo ~/install.sh --hub-url http://localhost:8080
+sudo ~/install.sh --hub-url http://localhost:8080 --version v1.1.0-rc.1
 systemctl status sonora-mcp            # active (running), enabled
 curl localhost:3001/health             # hub: reachable, within 2 s of start
-sudo ~/install.sh --hub-url http://localhost:8080 --port 3002   # re-run: reconfigures, no duplicate unit
+sudo ~/install.sh --hub-url http://localhost:8080 --port 3002 --version v1.1.0-rc.1   # re-run: reconfigures, no duplicate unit
 sudo systemctl kill -s KILL sonora-mcp; sleep 3; systemctl is-active sonora-mcp   # active (restarted)
 sudo reboot   # after boot: systemctl is-active sonora-mcp → active
 ```

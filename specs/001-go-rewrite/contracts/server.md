@@ -56,9 +56,12 @@ GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "..." -o dist/pi/sonora-
 gh release create <tag> dist/pi/sonora-mcp-linux-arm64 --title <tag>   # once per release
 ```
 
-Without `-ldflags` the version is `dev`. `deploy/pi/install.sh`'s `RELEASE_TAG` is bumped to
-`<tag>` as part of the same commit that gets tagged, so the script always matches the release it
-ships with (T060a). `install.sh` is the single file copied to the Pi.
+Without `-ldflags` the version is `dev`. Releases are tagged on `main` only, after the merge gate
+passes with a tagged sonora-cli. `deploy/pi/install.sh`'s `RELEASE_TAG` is bumped to `<tag>` in
+the commit that gets tagged, so the script always matches the release it ships with (T072).
+Pre-merge builds are published as GitHub prereleases (`<tag>-rc.N`, `--prerelease`) and installed
+with `--version`; `RELEASE_TAG` never points at one (T060a). `install.sh` is the single file copied
+to the Pi.
 
 ## Pi service (`deploy/pi/`)
 

@@ -255,8 +255,8 @@ locally and confirm the conformance test fails.
 - **FR-005**: A successful tool result MUST contain the hub's response data for that operation
   with every field the hub API specification defines for it. Operations for which the hub
   returns no body MUST return an explicit success confirmation.
-- **FR-005a**: Every successful result MUST carry the data twice: as JSON text (so existing
-  clients keep working) and as structured data. Each tool MUST declare the format of its
+- **FR-005a**: Every successful result MUST carry the data twice: as JSON text (so clients that
+  read only text keep working) and as structured data. Each tool MUST declare the format of its
   structured data, and the structured data MUST conform to it.
 
 **Hub interaction**
@@ -359,7 +359,7 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
 ### Key Entities
 
 - **Tool**: a named action an agent can call; has a description, an input schema with
-  constraints, a kind (read-only / idempotent / destructive) and maps to one hub operation.
+  constraints, a kind (read-only / state-changing / idempotent / destructive) and maps to one hub operation.
 - **Hub resource**: input, output, group, route, master mute, playback result; the data a tool
   returns, as defined by the hub API specification.
 - **Tool result**: the hub data for one call, delivered as JSON text and as structured data
@@ -405,6 +405,11 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
   release (constitution: dependency pinning).
 - Tool results may differ from the old server in formatting (field order, whitespace) but not in
   content. Error message wording may differ; error content and categories are new.
+- List results are an object wrapping the array (`{"inputs": [...]}`, `{"outputs": [...]}`,
+  `{"groups": [...]}`, `{"routes": [...]}`) in both the structured data and the JSON text, because
+  MCP clients require structured data to be an object. The old server returned the bare array as
+  text; the items are unchanged. Agents read the text as JSON, so this is treated as a formatting
+  change.
 - The old server returned `{"success": true, "status": 204}` for no-body responses; an
   equivalent explicit confirmation is sufficient, exact wording is not preserved.
 - Tool descriptions may be richer than the old ones (which were one-line summaries); names and

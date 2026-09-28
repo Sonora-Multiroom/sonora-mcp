@@ -171,7 +171,8 @@ than recalled. The hub facts were checked against sonora-cli branch `010-public-
   ${SONORA_HUB_URL} --port ${SONORA_PORT} $SONORA_HOST_ARG`, `Restart=on-failure`, `RestartSec=2`,
   `After=network-online.target`, basic hardening (`NoNewPrivileges`, `ProtectSystem=strict`,
   `ProtectHome=yes`). The binary is not embedded: `deploy/pi/install.sh` has a `RELEASE_TAG`
-  variable baked in at release-cut time (T060a), matching the GitHub Release the cross-built
+  variable baked in at release-cut time on `main` (T072; pre-merge validation uses a prerelease via
+  `--version`, T060a), matching the GitHub Release the cross-built
   `linux/arm64` binary (`sonora-mcp-linux-arm64`) was uploaded to. At install time the script
   downloads that asset with `curl -fsSL` from
   `https://github.com/tiger-seo/sonora-mcp/releases/download/${RELEASE_TAG}/sonora-mcp-linux-arm64`

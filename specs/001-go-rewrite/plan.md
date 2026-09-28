@@ -109,7 +109,7 @@ internal/
 │   ├── groups.go              # listGroups, getGroup, setGroupVolume, setGroupMute, setGroupEnabled
 │   ├── routes.go              # listRoutes, getRoute, createRoute, deleteRoute, transferRoute, setRoutePause
 │   ├── playback.go            # playback, getMasterMute, setMasterMute
-│   ├── tools.go               # Register(server, hubClient, hubURL, logger): all 24
+│   ├── tools.go               # Register(server, hubClient, hubURL): all 24 (logging is middleware)
 │   ├── fakehub_test.go        # httptest fake hub recording requests, canned responses
 │   ├── *_test.go              # per-file tool tests through an in-memory MCP client
 │   └── conformance_test.go    # tools vs api.Spec; tool-name inventory
@@ -127,7 +127,7 @@ README.md                      # rewritten for Go: build, cross-build, run, Pi i
 ```
 
 Removed: `src/`, `dist/`, `package.json`, `package-lock.json`, `tsconfig.json`, `openapi.json`,
-`scripts/update-openapi.mjs`, the `npm` lines in `run.sh`/`run.dev.sh` (rewritten to `go run` or
+`scripts/update-openapi.mjs`, `specs/sonora-mcp-plan.md` (Node-era plan), the `npm` lines in `run.sh`/`run.dev.sh` (rewritten to `go run` or
 removed), `node_modules/` (untracked).
 
 **Structure Decision**: single Go module with one binary under `cmd/sonora-mcp` and private packages
@@ -147,11 +147,13 @@ can be tested in isolation from HTTP; `internal/server` owns HTTP concerns only.
    (US3); each tool test-first against the fake hub.
 6. **Conformance test** (US6) as soon as the first tool exists; it grows with each tool.
 7. **Server**: `/mcp`, `/health`, graceful shutdown, `main.go` (US4/US5).
-8. **Pi deployment**: `install.sh` with the embedded unit; cut a GitHub release with the
-   cross-built binary attached and bake its tag into `install.sh`; validate on the Pi
-   (quickstart §8).
+8. **Pi deployment**: `install.sh` with the embedded unit; publish the cross-built binary as a
+   GitHub **prerelease** (`v1.1.0-rc.1`) and validate on the Pi with `--version` (quickstart §8).
 9. **Remove Node and update README** (US6).
-10. **Pin**: after sonora-cli is tagged, `go get …@<tag>`, gate with `GOWORK=off`.
+10. **Pin**: after sonora-cli is tagged, `go get …@<tag>`, gate with `GOWORK=off` on Windows and
+    Linux.
+11. **Release**: bake `RELEASE_TAG="v1.1.0"` into `install.sh` in the PR; after merge, tag `v1.1.0`
+    on `main` and attach the cross-built binary to that release.
 
 ## Complexity Tracking
 
