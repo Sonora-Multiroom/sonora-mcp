@@ -19,7 +19,8 @@ replace the Node.js/TypeScript MCP server with a Go implementation built on sono
   `--host 127.0.0.1`).
 - Q: Should tool results give agents the hub data only as JSON text, as today, or also as
   structured data with a declared format? → A: Both: JSON text plus structured data with a
-  declared format; errors carry the category in the message and in a structured field.
+  declared format; errors carry the category in the message and in a structured field
+  (structured field later dropped, see the planning revisit below).
 - Q: Should `/health` report only that the MCP server is running, as today, or also whether the
   hub can be reached? → A: Always 200 with status, server and version, plus a `hub` field
   (`reachable`/`unreachable`) from one quick, time-limited hub request.
@@ -28,8 +29,12 @@ replace the Node.js/TypeScript MCP server with a Go implementation built on sono
   clean shutdown on a stop signal, a service definition, and an install script that sets up and
   enables the service on the Pi.
 - Q: Should the install script run on the Pi itself after you copy the files there, or on your
-  Windows machine and deploy to the Pi over SSH? → A: On the Pi: copy the executable and
-  script over, then run the script there with the hub URL.
+  Windows machine and deploy to the Pi over SSH? → A: On the Pi: copy the install script over,
+  then run it there with the hub URL; it downloads the matching pre-built executable from the
+  project's GitHub Releases itself (the service definition is embedded in the script).
+- Q: (revisited during planning, 2026-09-28) Must the error category also be in a structured field,
+  given the SDK's simple tool API can't attach one? → A: No, the text prefix is enough for now;
+  revisit with the SDK's low-level API if a client needs a structured field.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -177,15 +182,15 @@ and request `/health`.
    response reports status ok, the server name `sonora-mcp`, the build's version, and
    `hub: reachable`.
 6. **Given** the hub is down, **When** the operator requests `/health`, **Then** the response
-   is still successful (200) and reports `hub: unreachable` within the hub time limit.
+   is still successful (200) and reports `hub: unreachable` within 2 seconds.
 7. **Given** a release build, **Then** the version in `/health`, the MCP server information and
    the startup log is the same value.
 8. **Given** a trailing slash in `--multiroom-url`, **Then** hub calls still resolve correctly.
 9. **Given** the server is handling a tool call, **When** it receives a stop signal, **Then** it
    stops accepting new connections, lets the call finish (bounded by the hub time limit), and
    exits with status 0.
-10. **Given** a Pi with the executable copied to it, **When** the operator runs the install
-    script with the hub URL, **Then** the server runs as a service, starts at boot, restarts
+10. **Given** a Pi with only the install script copied to it, **When** the operator runs it
+    with the hub URL, **Then** the server runs as a service, starts at boot, restarts
     after a crash, and running the script again updates the existing installation instead of
     duplicating it.
 
@@ -268,8 +273,8 @@ locally and confirm the conformance test fails.
 - **FR-009**: A failed hub call MUST produce an error result (not a protocol failure) containing
   a human-readable message and a stable error category name (at least: not found, validation,
   network/timeout, hub error, service unavailable, source unreachable, malformed response).
-  The category MUST appear both at the start of the message text (e.g.
-  `NotFound: output garage not found`) and in a structured field of the error result.
+  The category MUST appear at the start of the message text (e.g.
+  `NotFound: output garage not found`).
 - **FR-010**: Where the hub supplies problem details, the error message MUST include the hub's
   explanation.
 - **FR-011**: A failure or unexpected fault in one tool call MUST NOT stop the server or affect
@@ -300,12 +305,13 @@ locally and confirm the conformance test fails.
   connections, let in-flight calls finish within the hub time limit, and exit with status 0.
 - **FR-017b**: The repository MUST provide a service definition for Linux (the Pi) that starts
   the server at boot with the configured hub URL, port and host, and restarts it after a crash.
-- **FR-017c**: The repository MUST provide an install script, run on the Pi itself after the
-  executable and script have been copied there, that installs the executable and the service
-  definition, takes the hub URL (and optionally port and host) as input, enables and starts
-  the service, and is safe to re-run to upgrade or reconfigure. It
-  MUST NOT be required for building or for running on Windows. Remote deployment from the
-  development machine is out of scope.
+- **FR-017c**: The repository MUST provide a single install script — embedding the service
+  definition and a pinned release version — that is copied to the Pi as the only file and run
+  there. It takes the hub URL (and optionally port, host and a version override) as input,
+  downloads the matching pre-built executable from the project's GitHub Releases, installs the
+  executable and the service definition, enables and starts the service, and is safe to re-run
+  to upgrade or reconfigure. It MUST NOT be required for building or for running on Windows.
+  Remote deployment from the development machine is out of scope.
 
 **Maintenance**
 
@@ -358,8 +364,8 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
   returns, as defined by the hub API specification.
 - **Tool result**: the hub data for one call, delivered as JSON text and as structured data
   in the tool's declared format.
-- **Error result**: message plus error category (in the text and as a structured field),
-  returned to the agent instead of data.
+- **Error result**: message prefixed with the error category, returned to the agent instead of
+  data.
 - **Build version**: one identifier per build, reported by health, server info and logs.
 
 ## Success Criteria *(mandatory)*
@@ -373,15 +379,19 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
   information as the old server for the same calls.
 - **SC-003**: With the hub unresponsive, every tool returns an error within 10 seconds; none
   hang.
-- **SC-004**: 100% of failure responses carry an error category; an agent can distinguish
-  "not found", "bad input" and "hub unreachable" without parsing free text.
+- **SC-004**: 100% of failed hub calls return an error whose text starts with a category name
+  (e.g. `NotFound:`, `Validation:`, `Network:`), and input rejected by a tool's schema returns
+  the MCP SDK's validation error (`validating "arguments": …`) with no hub request; an agent
+  can distinguish "not found", "bad input" and "hub unreachable" from the first token of the
+  error text.
 - **SC-005**: The Pi deployment needs one file copied and no runtime installed; the server
   starts and, with the hub up, answers `/health` with `hub: reachable` within 2 seconds.
 - **SC-006**: The automated test suite passes with the network disabled, and introducing a
   deliberate tool/spec mismatch makes it fail.
 - **SC-007**: Zero Node.js files remain in the repository after the feature is merged.
-- **SC-008**: On a fresh Pi, the server is running as a service within 5 minutes of copying the
-  executable and install files, and is running again within 1 minute of a reboot or a crash.
+- **SC-008**: On a fresh Pi with internet access, the server is running as a service within 5
+  minutes of copying the install script to it, and is running again within 1 minute of a reboot
+  or a crash.
 
 ## Assumptions
 
@@ -407,3 +417,6 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
   as the hub's Pi does; the operator can run the install script with administrator rights.
 - The time limit per hub call is the shared client's default (5 seconds), except where the
   shared client defines a longer one for a specific operation.
+- The Pi has outbound internet access to GitHub (`github.com`, `objects.githubusercontent.com`)
+  at install time only, to download the release binary the install script fetches; no inbound
+  exposure changes and no internet access is needed once the server is running.
