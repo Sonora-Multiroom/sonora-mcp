@@ -485,7 +485,7 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
 
 ## Phase 9: Polish & merge readiness
 
-- [ ] T068 Run the merge gate from quickstart.md §2 on Windows with `GOWORK=off` (constitution
+- [X] T068 Run the merge gate from quickstart.md §2 on Windows with `GOWORK=off` (constitution
   Workflow §4): `gofmt -l .` empty, `go vet ./...`, `go build ./...`, `go test ./...` (with the
   network disabled once, SC-006; includes the T015a architecture check); also build the Windows
   executable (FR-017): `go build -ldflags "-X
@@ -494,7 +494,7 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   `golang:1.27` container with the workspace mounted) to meet FR-019 / Principle V ("pass on
   Windows and Linux"); `-race` runs only there because it needs cgo and a C toolchain, which the
   Windows setup does not have. Record both results in the PR description
-- [ ] T069 After sonora-cli PR #19 is merged and tagged: `go get
+- [X] T069 After sonora-cli PR #19 is merged and tagged: `go get
   github.com/Sonora-Multiroom/sonora-cli@<tag>`, `go mod tidy`, re-run the T068 gate (Windows and Linux) with `GOWORK=off`;
   confirm `go.mod` has no pseudo-version or `replace` for sonora-cli (constitution: dependency pinning)
 - [ ] T070 Run the full quickstart.md validation (§3–§7) against the real hub and MCP Inspector,
