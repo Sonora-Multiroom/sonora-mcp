@@ -33,9 +33,17 @@ One per tool; 24 in total ([contracts/tools.md](contracts/tools.md)).
 
 Arguments object sent by the agent, validated against `InputSchema` before the handler runs.
 
-- Identifier fields (`inputId`, `outputId`, `groupId`, `routeId`, `targetId`): string, `minLength: 1`;
-  `createInput.inputId` additionally matches `^[a-zA-Z0-9\-_]{1,255}$`. Passed to `hub`, which
-  path-escapes them.
+- Identifier fields are strings; their constraints follow the spec exactly (R4):
+  - Path IDs (`inputId`, `outputId`, `groupId`, `routeId` where they fill a URL path segment):
+    `minLength: 1`. The spec declares no `minLength` on path parameters, but an empty segment would
+    change the route (`GET /api/v2/outputs/` is the list), so the conformance test treats path
+    parameters as `minLength: 1`. Passed to `hub`, which path-escapes them.
+  - Body IDs (`createRoute.inputId`, `targetId` in `createRoute`/`transferRoute`/`playback`):
+    `minLength: 1`, as in the spec. `createInput.inputId` additionally matches
+    `^[a-zA-Z0-9\-_]{1,255}$`.
+  - `listRoutes` filters `inputId`, `targetId`: optional, no `minLength` (none in the spec).
+- Other strings: `uri` and `createInput.displayName` are `minLength: 1`; `playback.displayName` is
+  optional with no `minLength` (spec type `["string","null"]`).
 - `volume`: integer, 0–100 (required for set-volume tools, optional for `playback`).
 - `targetType`: enum `SINGLE_OUTPUT` | `OUTPUT_GROUP`.
 - `status` (`listRoutes`): enum `STARTING` | `ACTIVE` | `STOPPING` | `STOPPED` | `FAILED`, optional.
@@ -53,7 +61,8 @@ Arguments object sent by the agent, validated against `InputSchema` before the h
 | `content` | One text block containing the same JSON |
 
 Every field the spec defines for the resource is present (hub types verified complete for outputs and
-routes; conformance of the rest is checked by comparing output schemas with spec response schemas).
+routes; for every tool the conformance test checks that each property of the spec's success-response
+schema is a property of the tool's `outputSchema`, list envelopes unwrapped, 204 operations skipped).
 
 ## ErrorResult (per call, failure)
 

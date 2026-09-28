@@ -39,10 +39,14 @@ written first and must fail before its implementation task starts. All tests run
 - Result shapes: single resources = the `hub` type; lists wrapped as `{"inputs": [...]}`,
   `{"outputs": [...]}`, `{"groups": [...]}`, `{"routes": [...]}`; deletes =
   `{"deleted": true, "inputId": "<id>"}` / `{"deleted": true, "routeId": "<id>"}`.
-- Constraints (quote from data-model.md): IDs are "string, `minLength: 1`"; `createInput.inputId`
-  "additionally matches `^[a-zA-Z0-9\-_]{1,255}$`"; `volume` is "integer, 0–100"; `targetType` is
-  "enum `SINGLE_OUTPUT` | `OUTPUT_GROUP`"; `status` is "enum `STARTING` | `ACTIVE` | `STOPPING` |
-  `STOPPED` | `FAILED`, optional"; `uri` and `displayName` are `minLength: 1`.
+- Constraints (quote from data-model.md): path IDs (`inputId`, `outputId`, `groupId`, `routeId` in
+  the URL path) are "string, `minLength: 1`" (implicit in the spec, research R4); body IDs
+  (`createRoute.inputId`, `targetId`) are "string, `minLength: 1`" (explicit in the spec); the
+  `listRoutes` filters `inputId`/`targetId` are plain optional strings (no `minLength`);
+  `createInput.inputId` "additionally matches `^[a-zA-Z0-9\-_]{1,255}$`"; `volume` is "integer,
+  0–100"; `targetType` is "enum `SINGLE_OUTPUT` | `OUTPUT_GROUP`"; `status` is "enum `STARTING` |
+  `ACTIVE` | `STOPPING` | `STOPPED` | `FAILED`, optional"; `uri` and `createInput.displayName` are
+  `minLength: 1`; `playback.displayName` is a plain optional string (no `minLength`).
 
 ---
 
@@ -128,9 +132,15 @@ starts and lists tools. No tool exists yet at the end of this phase.
   operation exists in the spec; every input property maps to a path/query parameter or a
   request-body property of that operation; `required`, `enum`, `minimum`, `maximum`, `minLength`,
   `pattern` equal the spec's; failures name tool, field, tool value and spec value. Spec
-  `["boolean","null"]`-style types count as "optional" for `required`. Also (FR-003), via the T005
-  harness's `ListTools`: every tool has a non-empty description and every input-schema property
-  has a non-empty `description`; failures name the tool and field
+  `["boolean","null"]`-style types count as "optional" for `required`. Path parameters are
+  compared as if the spec declared `minLength: 1` (an empty path segment changes the route,
+  research R4); query parameters and body properties get no such allowance. Also (FR-005), for
+  every operation with a JSON success response: every property of the spec's response schema is
+  a property of the tool's `outputSchema` (unwrap the list envelope — `inputs`, `outputs`,
+  `groups`, `routes` — to its item schema first; skip 204 operations, whose result is the
+  `deleted` confirmation); failures name the tool and the missing field. Also (FR-003), via the
+  T005 harness's `ListTools`: every tool has a non-empty description and every input-schema
+  property has a non-empty `description`; failures name the tool and field
 
 ### Minimal config, server and entry point (tests first)
 
@@ -141,9 +151,10 @@ starts and lists tools. No tool exists yet at the end of this phase.
 - [ ] T017 Implement `internal/config/config.go` to pass T016 (stdlib `flag.FlagSet` with
   `ContinueOnError`; `Usage()` text matching contracts/server.md)
 - [ ] T018 [P] Write `internal/server/server_test.go` end-to-end: `httptest.NewServer(server.Handler(
-  mcpServer, deps))` + `mcp.StreamableClientTransport` → initialize and `ListTools` succeed without a
-  session ID; `GET /mcp` → 405; `GET /nope` → 404
-- [ ] T019 Implement `internal/server/server.go` to pass T018: `Handler(...) http.Handler` with a mux
+  mcpServer, hubClient, hubURL))` + `mcp.StreamableClientTransport` → initialize and `ListTools`
+  succeed without a session ID; `GET /mcp` → 405; `GET /nope` → 404
+- [ ] T019 Implement `internal/server/server.go` to pass T018: `Handler(s *mcp.Server, client
+  *http.Client, hubURL string) http.Handler` (client and URL are used by `/health`, T055) with a mux
   mounting `mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return s },
   &mcp.StreamableHTTPOptions{Stateless: true, PropagateRequestCancellation: true})` at `/mcp`
   (research R6; no CORS headers; SDK localhost protection left on) and 404 for everything else
@@ -178,12 +189,15 @@ and each returns every field the spec defines (spec US1).
   (no args → `GET /api/v2/inputs` without `includeDisabled`; `includeDisabled: true` →
   `?includeDisabled=true`; result `{"inputs": [...]}` with all Input fields) and `getInput`
   (`GET /api/v2/inputs/{inputId}`; an ID with a space, a `/` and a `#` reaches the hub
-  path-escaped; result is the Input); both annotated read-only
+  path-escaped; result is the Input); both annotated read-only; plus one `listInputs` call through a
+  harness built with a trailing-slash hub URL (`fakeHub.URL + "/"`) reaching the hub at exactly
+  `/api/v2/inputs` (spec US5 AS8)
 - [ ] T022 [P] [US1] Write `internal/tools/outputs_read_test.go`: `listOutputs`, `getOutput`, same
   pattern as T021 (`GET /api/v2/outputs`, `GET /api/v2/outputs/{outputId}`, wrapper `outputs`); the
   default call sends no `includeDisabled` query parameter and `includeDisabled: true` sends
-  `?includeDisabled=true`; with outputs A enabled and B disabled served by the fake hub for the
-  default call, the result contains the hub's list as returned (filtering is the hub's job)
+  `?includeDisabled=true`; the fake hub returns only output A for the default call and A plus the
+  disabled B for `?includeDisabled=true`, and each result contains exactly the outputs the hub
+  returned (filtering is the hub's job; spec US1 AS2)
 - [ ] T023 [P] [US1] Write `internal/tools/groups_read_test.go`: `listGroups`, `getGroup`
   (`GET /api/v2/groups`, `GET /api/v2/groups/{groupId}`, wrapper `groups`)
 - [ ] T024 [P] [US1] Write `internal/tools/routes_read_test.go`: `listRoutes` sends only the filters
@@ -225,15 +239,16 @@ the hub's new state; out-of-range volume makes no request (spec US2).
 - [ ] T032 [P] [US2] Write `internal/tools/outputs_control_test.go`: `setOutputVolume`
   (`PUT /api/v2/outputs/{outputId}/volume` body `{"volume":35}`, returns OutputVolume; `volume` 150
   and -1 and 35.5 rejected with no hub request — "integer, 0–100"), `setOutputMute`
-  (`PUT …/mute` `{"muted":true}`), `setOutputEnabled` (`PUT …/enabled` `{"enabled":false}`); all
-  annotated idempotent
+  (`PUT …/mute` `{"muted":true}`, then `{"muted":false}` — the body must contain the `false` key,
+  not drop it), `setOutputEnabled` (`PUT …/enabled` `{"enabled":false}`); all annotated idempotent
 - [ ] T033 [P] [US2] Write `internal/tools/groups_control_test.go`: `setGroupVolume`,
   `setGroupMute`, `setGroupEnabled` (paths `/api/v2/groups/{groupId}/volume|mute|enabled`), same
-  assertions as T032
+  assertions as T032, including `{"muted":false}` for `setGroupMute`
 - [ ] T034 [P] [US2] Write `internal/tools/inputs_enabled_test.go`: `setInputEnabled`
   (`PUT /api/v2/inputs/{inputId}/enabled`), idempotent
 - [ ] T035 [P] [US2] Write `internal/tools/mastermute_set_test.go`: `setMasterMute`
-  (`PUT /api/v2/master-mute` `{"muted":true}`), idempotent
+  (`PUT /api/v2/master-mute` `{"muted":true}`, then `{"muted":false}` with the `false` key present),
+  idempotent
 
 ### Implementation
 
@@ -263,7 +278,8 @@ create → delete an input, against the fake hub (spec US3).
 - [ ] T040 [P] [US3] Write `internal/tools/routes_write_test.go`: `createRoute` (`POST /api/v2/routes`
   body `{"inputId","targetId","targetType"}`, state-changing), `transferRoute`
   (`POST /api/v2/routes/{routeId}/transfer` body `{"targetId","targetType"}`, state-changing),
-  `setRoutePause` (`PUT /api/v2/routes/{routeId}/pause` `{"paused":true}`, idempotent), `deleteRoute`
+  `setRoutePause` (`PUT /api/v2/routes/{routeId}/pause` `{"paused":true}` to pause, then
+  `{"paused":false}` to resume with the `false` key present, idempotent), `deleteRoute`
   (`DELETE /api/v2/routes/{routeId}`, hub 204 → `{"deleted": true, "routeId": "<id>"}`,
   destructive); `targetType` `"SPEAKER"` rejected with no hub request
 - [ ] T041 [P] [US3] Write `internal/tools/inputs_write_test.go`: `createInput` (`POST /api/v2/inputs`;
@@ -313,9 +329,9 @@ never answering; plus a concurrent healthy call (spec US4).
 
 ### Implementation
 
-- [ ] T049 [US4] Fix whatever T046–T048 expose in `internal/tools/errors.go`,
+- [ ] T049 [US4] Make T046–T048 pass, changing only `internal/tools/errors.go` and
   `internal/tools/register.go` (keep error text `"<Category>: <message>"`; never return protocol
-  errors for hub failures)
+  errors for hub failures); if they already pass, record that and change nothing
 
 **Checkpoint**: error behaviour verified across categories, timeout, cancellation and concurrency.
 
@@ -343,7 +359,8 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   successfully, new connections are refused, `Run` returns nil within 6 s
 - [ ] T053 [P] [US5] Extend `cmd/sonora-mcp/main_test.go` (from T019a): the version string used by the MCP
   `Implementation`, `/health` and the startup log line all come from `version.Version` (build a server
-  via the same constructor `main` uses and compare)
+  via the same constructor `main` uses and compare); the `*http.Client` that constructor passes to
+  the tools and `/health` has a non-zero `Timeout` (it comes from `hub.NewClient()`, SC-003)
 
 ### Implementation
 
@@ -374,7 +391,10 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   env file to `/etc/default/sonora-mcp`; `systemctl daemon-reload`; `enable` + `restart`
   (idempotent on re-run); prints `systemctl --no-pager status sonora-mcp`; run `shellcheck` on the
   file if available
-- [ ] T060 [US5] Verify cross-build: `GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "-X
+- [ ] T060 [US5] Verify cross-build with the workspace off, so the binary is built from the pushed
+  sonora-cli pseudo-version in `go.mod` and not from a local checkout (re-run
+  `go get github.com/Sonora-Multiroom/sonora-cli@010-public-hub-package` first if the branch has
+  moved): `GOWORK=off GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "-X
   github.com/tiger-seo/sonora-mcp/internal/version.Version=1.1.0-rc.1" -o dist/pi/sonora-mcp-linux-arm64
   ./cmd/sonora-mcp` succeeds; record the binary size for the PR description (Principle VI)
 - [ ] T060a [US5] Publish a **prerelease** for Pi validation (FR-017c), not the final release: the
@@ -408,11 +428,10 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   tsconfig.json openapi.json specs/sonora-mcp-plan.md` (the last is the Node-era plan, superseded
   by this feature's spec and plan; tracked files only — `git rm` aborts without removing anything if a
   path is untracked); then delete the untracked `scripts/update-openapi.mjs` (and `scripts/` if it
-  is left empty), `dist/` and `node_modules/` from disk with plain `rm`; confirm with the
-  quickstart §9 `git ls-files` check and that `scripts/update-openapi.mjs` no longer exists
-- [ ] T065 [P] [US6] Replace `run.sh` and `run.dev.sh` contents with Go equivalents (`go run
-  ./cmd/sonora-mcp --multiroom-url http://multiroom.lan:8080` for dev; `./sonora-mcp --multiroom-url
-  …` for a built binary)
+  is left empty), `run.sh` and `run.dev.sh` (one-line `npm` launchers, not replaced: README documents
+  `go run`/`go build`), `dist/` and `node_modules/` from disk with plain `rm`; confirm with the
+  quickstart §9 `git ls-files` check and that `scripts/update-openapi.mjs`, `run.sh` and `run.dev.sh`
+  no longer exist
 - [ ] T066 [P] [US6] Remove Node rules from `.gitignore` (`node_modules/`, `*.js`, `*.d.ts`,
   `*.d.ts.map`, `*.js.map`, `!.gitignore` block) keeping Go and Spec Kit rules
 - [ ] T067 [US6] Rewrite `README.md` for Go: architecture diagram (unchanged), build with version
@@ -445,8 +464,6 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   confirm `go.mod` has no pseudo-version or `replace` for sonora-cli (constitution: dependency pinning)
 - [ ] T070 Run the full quickstart.md validation (§3–§7) against the real hub and MCP Inspector,
   including VS Code with the existing `.vscode/mcp.json`; record results in the PR description
-- [ ] T071 [P] Update the checklist in `docs/future/go-rewrite-shared-hub-client.md` (phase 3 items
-  done) and set its status line
 - [ ] T072 Cut the `v1.1.0` release from `main` (FR-017c; constitution: dependency pinning). Before
   merge, as the last commit of the PR: set `RELEASE_TAG="v1.1.0"` in `deploy/pi/install.sh`. After
   the PR is merged: tag the merge commit on `main` `v1.1.0` and push the tag; from a checkout of that
@@ -466,9 +483,11 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   files as US1 (`inputs.go`, `outputs.go`, `groups.go`, `routes.go`, `playback.go`), so run them after
   US1 to avoid edit conflicts.
 - **US4 (6)** needs at least the tools it exercises (US1–US3).
-- **US5 (7)** depends on Foundational only; T055/T051 use `hub.GetMasterMute` directly, not the tool.
-- **US6 (8)**: T062 after US3; T064–T067 last, after the Go server is verified (US5 checkpoint).
-- **Polish (9)**: T069 is blocked on the sonora-cli tag. T072 is the last task: after T069–T071 and
+- **US5 (7)** depends on Foundational, plus US1 for T052 (its in-flight call uses `getMasterMute`);
+  T055/T051 use `hub.GetMasterMute` directly, not the tool.
+- **US6 (8)**: T062 after US3; T064, T066, T067 last, after the Go server is verified (US5
+  checkpoint).
+- **Polish (9)**: T069 is blocked on the sonora-cli tag. T072 is the last task: after T069–T070 and
   the merge to `main`. T060a publishes only a prerelease; no final release is tagged off `main`.
 
 ### Within each phase
@@ -485,7 +504,9 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
 - US3: T040–T042; then T043–T045.
 - US4: T046–T048.
 - US5: T050–T053; T058 then T059 (same file, `deploy/pi/install.sh`), anytime in the phase.
-- US5 can run alongside US2–US4 (different packages).
+- US5 can run alongside US2–US4 once US1 is done (different packages).
+- T065 and T071 were removed (the untracked `run*.sh` launchers are deleted in T064; the untracked
+  `docs/future/` design note is not part of this feature); the IDs are not reused.
 
 ---
 

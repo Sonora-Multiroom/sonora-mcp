@@ -285,8 +285,10 @@ locally and confirm the conformance test fails.
 **Operation**
 
 - **FR-013**: The server MUST accept `--multiroom-url <url>` (required), `--port <port>`
-  (default 3001) and `-h`/`--help`, with the same meaning and exit behavior as today; a missing
-  hub URL MUST stop startup with usage text and a non-zero exit status.
+  (default 3001) and `-h`/`--help`, with the same meaning as today; `--help` MUST exit with
+  status 0, and a missing or invalid flag value MUST stop startup with usage text and exit status
+  2 (Go's usage-error convention; the old server exited with 1, which no known client or service
+  definition depends on).
 - **FR-013a**: The server MUST accept connections on all network addresses by default (as
   today), and MUST accept an optional `--host <address>` flag that restricts the listening
   address (e.g. `127.0.0.1` for local-only use). An invalid address MUST stop startup with

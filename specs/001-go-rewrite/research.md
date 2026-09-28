@@ -48,8 +48,10 @@ than recalled. The hub facts were checked against sonora-cli branch `010-public-
 
 - **Decision**: one Go input struct per tool (`json` tags for names, `jsonschema` tag for the field
   description). Constraints the tag cannot express are applied in code after inference: `minimum` /
-  `maximum` (volume 0–100), `enum` (target type, route status), `minLength` / `pattern` (IDs, URIs,
-  `inputId` pattern `^[a-zA-Z0-9\-_]{1,255}$`). Optional fields are pointer types with `omitempty`.
+  `maximum` (volume 0–100), `enum` (target type, route status), `minLength` / `pattern` (path and
+  body IDs, `uri`, `createInput.displayName`, `inputId` pattern `^[a-zA-Z0-9\-_]{1,255}$`), exactly
+  where the spec has them plus the path-parameter rule in R4 (no `minLength` on the `listRoutes`
+  filters or `playback.displayName`). Optional fields are pointer types with `omitempty`.
 - **Rationale**: in `google/jsonschema-go` v0.4.3 the `jsonschema` struct tag is **only** the
   description (tags starting `WORD=` are rejected), so constraints must be set on the inferred
   `*jsonschema.Schema`. Explicit per-tool code keeps each tool readable.
@@ -63,8 +65,14 @@ than recalled. The hub facts were checked against sonora-cli branch `010-public-
   version). Each tool declares the hub operation it wraps (`method`, `path`). The test checks, for every
   tool: the operation exists in the spec; every tool input field maps to a path/query parameter or a
   request-body property of that operation; and `required`, `enum`, `minimum`, `maximum`, `minLength`,
-  `pattern` match. Mismatches fail with tool name, field and both values. A second check asserts the
-  registered tool names equal the 24-name inventory.
+  `pattern` match. Path parameters are compared as if the spec declared `minLength: 1`: the hub spec
+  (0.1.18) gives path IDs only `{"type":"string"}`, yet an empty segment would change the route
+  (`GET /api/v2/outputs/` is the list endpoint), so a non-empty path ID is what the spec's path
+  means, not a guessed constraint. Query and body parameters get no such allowance. The test also
+  checks responses (FR-005): every property of the operation's success-response schema is a
+  property of the tool's `outputSchema` (list envelopes unwrapped to their item schema; 204
+  operations skipped). Mismatches fail with tool name, field and both values. A second check
+  asserts the registered tool names equal the 24-name inventory.
 - **Rationale**: this is the automated drift detector the constitution requires, using the same spec
   version the client was tested against.
 - **Alternatives**: keep a local `openapi.json` (forbidden by Principle I).
@@ -79,7 +87,8 @@ than recalled. The hub facts were checked against sonora-cli branch `010-public-
   - **Error**: `isError: true`; text `"<Category>: <message>"`. No `structuredContent` and no
     `_meta` category (R2 limit).
   - **Categories** (from `hub.ClassifyError`, with two pre-checks):
-    `*hub.DecodeError` → `MalformedResponse`; `context.DeadlineExceeded` → `Timeout`; then
+    `*hub.DecodeError` → `MalformedResponse`; `context.DeadlineExceeded` or a `net.Error` whose
+    `Timeout()` is true (the `http.Client` timeout) → `Timeout`; then
     `ClassNotFound`/`ClassInputNotFound`/`ClassTargetNotFound` → `NotFound`, `ClassValidation` →
     `Validation`, `ClassRouteFailed` → `RouteFailed`, `ClassSourceUnreachable` → `SourceUnreachable`,
     `ClassServiceUnavailable` → `ServiceUnavailable`, `ClassNetwork` → `Network`, `ClassHub` →

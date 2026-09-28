@@ -101,9 +101,9 @@ restart), then press Ctrl+C. Expect the call to complete or time out, then exit 
 On the development machine:
 
 ```powershell
-$env:GOOS="linux"; $env:GOARCH="arm64"; $env:CGO_ENABLED="0"
+$env:GOWORK="off"; $env:GOOS="linux"; $env:GOARCH="arm64"; $env:CGO_ENABLED="0"   # build from go.mod, not the local sonora-cli checkout
 go build -ldflags "-X github.com/tiger-seo/sonora-mcp/internal/version.Version=1.1.0-rc.1" -o dist/pi/sonora-mcp-linux-arm64 ./cmd/sonora-mcp
-Remove-Item Env:GOOS, Env:GOARCH, Env:CGO_ENABLED
+Remove-Item Env:GOWORK, Env:GOOS, Env:GOARCH, Env:CGO_ENABLED
 gh release create v1.1.0-rc.1 dist/pi/sonora-mcp-linux-arm64 --title v1.1.0-rc.1 --prerelease   # T060a
 scp deploy/pi/install.sh pi@multiroom.lan:~/install.sh
 ```

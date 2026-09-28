@@ -92,7 +92,8 @@ specs/001-go-rewrite/
 go.mod                         # module github.com/tiger-seo/sonora-mcp; go 1.27
 go.sum
 cmd/sonora-mcp/
-└── main.go                    # parse config, build server, run until signal, exit codes
+├── main.go                    # parse config, build server, run until signal, exit codes
+└── main_test.go               # run(args, stdout, stderr) exit codes; single version source
 internal/
 ├── config/
 │   ├── config.go              # flag parsing + validation (--multiroom-url, --port, --host), usage
@@ -111,12 +112,16 @@ internal/
 │   ├── playback.go            # playback, getMasterMute, setMasterMute
 │   ├── tools.go               # Register(server, hubClient, hubURL): all 24 (logging is middleware)
 │   ├── fakehub_test.go        # httptest fake hub recording requests, canned responses
+│   ├── harness_test.go        # in-memory MCP client session + callTool/toolByName helpers
 │   ├── *_test.go              # per-file tool tests through an in-memory MCP client
-│   └── conformance_test.go    # tools vs api.Spec; tool-name inventory
+│   ├── conformance_test.go    # tools vs api.Spec (inputs and responses); tool-name inventory
+│   └── architecture_test.go   # no direct net/http hub calls, no package-level hub state
 └── server/
-    ├── server.go              # http.Server: /mcp (stateless handler), /health, 404; Run(ctx) with graceful shutdown
+    ├── server.go              # Handler(s, client, hubURL): /mcp (stateless), /health, 404; Run(ctx, srv) graceful shutdown
     ├── health.go              # /health with 2 s hub check
-    └── server_test.go         # end-to-end over httptest with StreamableClientTransport; health; shutdown
+    ├── server_test.go         # end-to-end over httptest with StreamableClientTransport
+    ├── health_test.go         # /health reachable / unreachable within 2 s
+    └── shutdown_test.go       # in-flight call drains, Run returns nil
 deploy/pi/
 └── install.sh                 # idempotent installer (bash): embeds the systemd unit as a
                                 # heredoc and a pinned release tag; downloads the matching
@@ -127,8 +132,8 @@ README.md                      # rewritten for Go: build, cross-build, run, Pi i
 ```
 
 Removed: `src/`, `dist/`, `package.json`, `package-lock.json`, `tsconfig.json`, `openapi.json`,
-`scripts/update-openapi.mjs`, `specs/sonora-mcp-plan.md` (Node-era plan), the `npm` lines in `run.sh`/`run.dev.sh` (rewritten to `go run` or
-removed), `node_modules/` (untracked).
+`scripts/update-openapi.mjs`, `specs/sonora-mcp-plan.md` (Node-era plan), `run.sh`/`run.dev.sh`
+(untracked one-line `npm` launchers, not replaced), `node_modules/` (untracked).
 
 **Structure Decision**: single Go module with one binary under `cmd/sonora-mcp` and private packages
 under `internal/`, the same layout sonora-cli uses. `internal/tools` holds all MCP-specific mapping so it
