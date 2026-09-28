@@ -7,14 +7,18 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Sonora-Multiroom/sonora-cli/hub"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // newTestSession builds an MCP server with every tool registered against
 // hubURL, connects an in-memory MCP client to it and returns the client
-// session.
+// session. A nil client means hub.NewClient().
 func newTestSession(t *testing.T, hubURL string, client *http.Client) *mcp.ClientSession {
 	t.Helper()
+	if client == nil {
+		client = hub.NewClient()
+	}
 	server := mcp.NewServer(&mcp.Implementation{Name: "sonora-mcp", Version: "test"}, nil)
 	Register(server, client, hubURL)
 	return connect(t, server)

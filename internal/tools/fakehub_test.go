@@ -58,7 +58,9 @@ func newFakeHub(t *testing.T) *fakeHub {
 	return h
 }
 
-// handle registers a canned response for method and escaped path.
+// handle registers a canned response for method and escaped path. A path
+// with "?query" matches only requests with exactly that raw query, and takes
+// precedence over the same path without one.
 func (h *fakeHub) handle(method, path string, status int, body string) {
 	h.handleDelayed(method, path, status, body, 0)
 }
@@ -108,7 +110,10 @@ func (h *fakeHub) serve(w http.ResponseWriter, r *http.Request) {
 		RawQuery: r.URL.RawQuery,
 		Body:     string(body),
 	})
-	route, ok := h.routes[r.Method+" "+path]
+	route, ok := h.routes[r.Method+" "+path+"?"+r.URL.RawQuery]
+	if !ok {
+		route, ok = h.routes[r.Method+" "+path]
+	}
 	h.mu.Unlock()
 
 	if !ok {

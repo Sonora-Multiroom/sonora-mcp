@@ -252,3 +252,17 @@ func TestToolDescriptions(t *testing.T) {
 		}
 	}
 }
+
+// TestRegisterCount checks that Register reports the number of tools it
+// actually registered (used by the startup log).
+func TestRegisterCount(t *testing.T) {
+	server := mcp.NewServer(&mcp.Implementation{Name: "sonora-mcp", Version: "test"}, nil)
+	n := Register(server, nil, "http://127.0.0.1:1")
+	res, err := connect(t, server).ListTools(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("ListTools: %v", err)
+	}
+	if n != len(res.Tools) {
+		t.Errorf("Register returned %d, ListTools has %d tools", n, len(res.Tools))
+	}
+}

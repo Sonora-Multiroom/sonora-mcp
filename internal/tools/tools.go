@@ -12,7 +12,13 @@ import (
 // client and the request context; nothing is cached between calls. It
 // returns the number of tools registered.
 func Register(s *mcp.Server, client *http.Client, hubURL string) int {
-	registrars := []func(*mcp.Server, *http.Client, string) int{}
+	registrars := []func(*mcp.Server, *http.Client, string) int{
+		registerInputs,
+		registerOutputs,
+		registerGroups,
+		registerRoutes,
+		registerPlayback,
+	}
 	n := 0
 	for _, r := range registrars {
 		n += r(s, client, hubURL)
