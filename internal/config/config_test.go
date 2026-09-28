@@ -67,3 +67,42 @@ func TestUsageMentionsFlags(t *testing.T) {
 		}
 	}
 }
+
+func TestParseHost(t *testing.T) {
+	tests := []struct {
+		args       []string
+		host, addr string
+	}{
+		{nil, "", ":3001"},
+		{[]string{"--host", "127.0.0.1"}, "127.0.0.1", "127.0.0.1:3001"},
+		{[]string{"--host", "::1"}, "::1", "[::1]:3001"},
+		{[]string{"--host", "localhost", "--port", "4000"}, "localhost", "localhost:4000"},
+	}
+	for _, tt := range tests {
+		cfg, err := Parse(append([]string{"--multiroom-url", "http://h"}, tt.args...))
+		if err != nil {
+			t.Errorf("Parse(%q): %v", tt.args, err)
+			continue
+		}
+		if cfg.Host != tt.host {
+			t.Errorf("Parse(%q).Host = %q, want %q", tt.args, cfg.Host, tt.host)
+		}
+		if got := cfg.ListenAddr(); got != tt.addr {
+			t.Errorf("Parse(%q).ListenAddr() = %q, want %q", tt.args, got, tt.addr)
+		}
+	}
+}
+
+func TestParseRejectsBadHost(t *testing.T) {
+	for _, host := range []string{"not a host!", "hub.local", "127.0.0.1:80"} {
+		if _, err := Parse([]string{"--multiroom-url", "http://h", "--host", host}); !errors.Is(err, ErrUsage) {
+			t.Errorf("--host %q: error = %v, want ErrUsage", host, err)
+		}
+	}
+}
+
+func TestUsageMentionsHost(t *testing.T) {
+	if !strings.Contains(Usage(), "--host") {
+		t.Errorf("usage missing --host:\n%s", Usage())
+	}
+}

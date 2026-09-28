@@ -6,7 +6,9 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net"
 	"net/url"
+	"strconv"
 )
 
 // DefaultPort is the port used when --port is not given.
@@ -25,17 +27,27 @@ type Config struct {
 	HubURL string
 	// Port is the TCP port the server listens on.
 	Port int
+	// Host is the address to listen on: an IP literal or "localhost". Empty
+	// means all addresses.
+	Host string
+}
+
+// ListenAddr returns the host:port address to listen on.
+func (c Config) ListenAddr() string {
+	return net.JoinHostPort(c.Host, strconv.Itoa(c.Port))
 }
 
 // Usage returns the command-line usage text.
 func Usage() string {
 	return fmt.Sprintf(`Usage:
-  sonora-mcp --multiroom-url <url> [--port <port>]
+  sonora-mcp --multiroom-url <url> [--port <port>] [--host <address>]
   sonora-mcp -h | --help
 
 Options:
   --multiroom-url <url>  Base URL of the Multiroom Audio Hub, http or https (required)
   --port <port>          Port to listen on, 1-65535 (default %d)
+  --host <address>       Address to listen on: an IP such as 127.0.0.1 or ::1,
+                         or localhost (default: all addresses)
   -h, --help             Show this help
 `, DefaultPort)
 }
@@ -49,6 +61,7 @@ func Parse(args []string) (Config, error) {
 	var cfg Config
 	fs.StringVar(&cfg.HubURL, "multiroom-url", "", "")
 	fs.IntVar(&cfg.Port, "port", DefaultPort, "")
+	fs.StringVar(&cfg.Host, "host", "", "")
 
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -64,6 +77,9 @@ func Parse(args []string) (Config, error) {
 	}
 	if cfg.Port < 1 || cfg.Port > 65535 {
 		return Config{}, usageErr("--port must be between 1 and 65535, got %d", cfg.Port)
+	}
+	if cfg.Host != "" && cfg.Host != "localhost" && net.ParseIP(cfg.Host) == nil {
+		return Config{}, usageErr("--host must be an IP address or localhost, got %q", cfg.Host)
 	}
 	return cfg, nil
 }
