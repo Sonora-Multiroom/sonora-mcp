@@ -54,19 +54,19 @@ written first and must fail before its implementation task starts. All tests run
 
 **Purpose**: Go module and repository basics. Node.js files stay untouched until Phase 8.
 
-- [ ] T001 Create `go.mod` with `module github.com/tiger-seo/sonora-mcp` and `go 1.27`; run
+- [X] T001 Create `go.mod` with `module github.com/tiger-seo/sonora-mcp` and `go 1.27`; run
   `go get github.com/modelcontextprotocol/go-sdk@v1.8.0` and
   `go get github.com/Sonora-Multiroom/sonora-cli@010-public-hub-package` (pseudo-version of PR #19,
   allowed on this feature branch only; replaced by a tag in T069); commit `go.mod`/`go.sum`
-- [ ] T002 [P] Add Go ignores to `.gitignore`: `/sonora-mcp`, `/sonora-mcp.exe`, `/dist/`, `go.work`,
+- [X] T002 [P] Add Go ignores to `.gitignore`: `/sonora-mcp`, `/sonora-mcp.exe`, `/dist/`, `go.work`,
   `go.work.sum`; keep the existing Node and Spec Kit rules for now
-- [ ] T003 [P] Create `internal/version/version.go`: package `version` with
+- [X] T003 [P] Create `internal/version/version.go`: package `version` with
   `var Version = "dev"` and a godoc saying it is set via
   `-ldflags "-X github.com/tiger-seo/sonora-mcp/internal/version.Version=<v>"`
-- [ ] T003a [P] Commit the design note `docs/future/go-rewrite-shared-hub-client.md` on its own
+- [X] T003a [P] Commit the design note `docs/future/go-rewrite-shared-hub-client.md` on its own
   (`docs:` commit) so the references to it from spec.md, the constitution's Sync Impact Report and
   plan decisions resolve after merge
-- [ ] T003b [P] Commit `.vscode/mcp.json` on its own (`chore:` commit; it holds only
+- [X] T003b [P] Commit `.vscode/mcp.json` on its own (`chore:` commit; it holds only
   `http://localhost:3001/mcp`, no secrets) so the reference client configuration used by T070 and
   SC-001 is in the repository; leave `.vscode/settings.json` untracked
 
@@ -81,12 +81,12 @@ starts and lists tools. No tool exists yet at the end of this phase.
 
 ### Test infrastructure
 
-- [ ] T004 [P] Create fake hub in `internal/tools/fakehub_test.go`: `newFakeHub(t)` wrapping
+- [X] T004 [P] Create fake hub in `internal/tools/fakehub_test.go`: `newFakeHub(t)` wrapping
   `httptest.Server`; `handle(method, path string, status int, body string)` to register canned
   responses (unregistered routes → 404 with RFC 7807 body); records every request (method, path, raw
   query, body) for assertions; optional per-route delay to simulate a slow hub; fixture constants for a
   spec-shaped Output, Group, Input, Route, MasterMute, PlaybackResponse (all fields from the hub types)
-- [ ] T005 [P] Create MCP test harness in `internal/tools/harness_test.go`: `newTestSession(t, hubURL,
+- [X] T005 [P] Create MCP test harness in `internal/tools/harness_test.go`: `newTestSession(t, hubURL,
   client *http.Client)` builds `mcp.NewServer(&mcp.Implementation{Name: "sonora-mcp", Version: "test"},
   nil)`, calls `Register`, connects an `mcp.Client` over `mcp.NewInMemoryTransports()`, returns the
   `*mcp.ClientSession`; helpers `callTool(t, s, name, args)` → `*mcp.CallToolResult`,
@@ -94,14 +94,14 @@ starts and lists tools. No tool exists yet at the end of this phase.
 
 ### Tool plumbing (tests first)
 
-- [ ] T006 [P] Write `internal/tools/schema_test.go`: `inputSchema[T]` infers an object schema from a
+- [X] T006 [P] Write `internal/tools/schema_test.go`: `inputSchema[T]` infers an object schema from a
   struct and applies `withRange("volume", 0, 100)`, `withEnum("targetType", "SINGLE_OUTPUT",
   "OUTPUT_GROUP")`, `withMinLength("outputId", 1)`, `withPattern("inputId", …)`; unknown property
   name panics at startup (programming error); descriptions come from `jsonschema` tags
-- [ ] T007 Implement `internal/tools/schema.go` to pass T006 (uses `jsonschema.For[T](nil)` from
+- [X] T007 Implement `internal/tools/schema.go` to pass T006 (uses `jsonschema.For[T](nil)` from
   `github.com/google/jsonschema-go/jsonschema`; constraints set on the inferred `*jsonschema.Schema`,
   because the `jsonschema` tag only carries the description — research R3)
-- [ ] T008 [P] Write `internal/tools/errors_test.go` table test for `toolError(err error) error` →
+- [X] T008 [P] Write `internal/tools/errors_test.go` table test for `toolError(err error) error` →
   message `"<Category>: <message>"`: `*hub.DecodeError` → `MalformedResponse`;
   `context.DeadlineExceeded` or a `net.Error` with `Timeout()` → `Timeout`; `hub.ClassNotFound`,
   `ClassInputNotFound`, `ClassTargetNotFound` → `NotFound`; `ClassValidation` → `Validation`;
@@ -109,9 +109,9 @@ starts and lists tools. No tool exists yet at the end of this phase.
   `ClassServiceUnavailable` → `ServiceUnavailable`; `ClassNetwork` → `Network`; `ClassHub` →
   `HubError`; a `*hub.APIError` with `Detail` keeps the hub's detail in the message (FR-010); a
   `*hub.StatusError` message includes the HTTP status
-- [ ] T009 Implement `internal/tools/errors.go` to pass T008 (pre-checks, then `hub.ClassifyError`;
+- [X] T009 Implement `internal/tools/errors.go` to pass T008 (pre-checks, then `hub.ClassifyError`;
   export the category names as constants)
-- [ ] T010 [P] Write `internal/tools/register_test.go`: a throwaway test tool registered via `add`
+- [X] T010 [P] Write `internal/tools/register_test.go`: a throwaway test tool registered via `add`
   appears in `ListTools` with the given description, the explicit input schema, the output schema
   inferred from `Out`, and annotations per Kind (read-only → `readOnlyHint: true`; idempotent →
   `readOnlyHint: false, destructiveHint: false, idempotentHint: true`; state-changing → both false;
@@ -120,22 +120,22 @@ starts and lists tools. No tool exists yet at the end of this phase.
   Principle II, SC-004) and never invoke the handler; a handler that
   panics returns `isError` with text `Internal: unexpected server error` and a following call still
   succeeds; the registry records the tool's `toolSpec`
-- [ ] T011 [P] Write `internal/tools/logging_test.go`: middleware from `LogToolCalls(logger)` writes
+- [X] T011 [P] Write `internal/tools/logging_test.go`: middleware from `LogToolCalls(logger)` writes
   exactly one record per `tools/call` with `tool`, `args` (JSON), `outcome` (`ok`, the category
   prefix of an error result, or `InvalidInput` for SDK validation errors), `duration`; other methods
   (`tools/list`) are not logged
-- [ ] T012 Implement `internal/tools/register.go` to pass T010: `type Kind int` (`ReadOnly`,
+- [X] T012 Implement `internal/tools/register.go` to pass T010: `type Kind int` (`ReadOnly`,
   `Idempotent`, `StateChanging`, `Destructive`), `type toolSpec struct{Name, Description string;
   Kind Kind; Method, Path string}`, package registry `var registered []toolSpec`, and
   `func add[In, Out any](s *mcp.Server, spec toolSpec, in *jsonschema.Schema, h func(context.Context,
   In) (Out, error))` that builds `mcp.Tool{Name, Description, InputSchema: in, Annotations}`,
   wraps `h` with panic recovery (log stack via slog) and calls `mcp.AddTool`
-- [ ] T013 Implement `internal/tools/logging.go` to pass T011 (`mcp.Middleware` for
+- [X] T013 Implement `internal/tools/logging.go` to pass T011 (`mcp.Middleware` for
   `Server.AddReceivingMiddleware`, slog text records)
-- [ ] T014 Create `internal/tools/tools.go`: `func Register(s *mcp.Server, client *http.Client,
+- [X] T014 Create `internal/tools/tools.go`: `func Register(s *mcp.Server, client *http.Client,
   hubURL string)` that calls one `registerX` function per file (inputs, outputs, groups, routes,
   playback); start with empty stubs so the package compiles
-- [ ] T015 Write `internal/tools/conformance_test.go` (research R4): load `api.Spec` from
+- [X] T015 Write `internal/tools/conformance_test.go` (research R4): load `api.Spec` from
   `github.com/Sonora-Multiroom/sonora-cli/api`; for every entry in `registered`: the `Method`+`Path`
   operation exists in the spec; every input property maps to a path/query parameter or a
   request-body property of that operation; `required`, `enum`, `minimum`, `maximum`, `minLength`,
@@ -149,7 +149,7 @@ starts and lists tools. No tool exists yet at the end of this phase.
   `deleted` confirmation); failures name the tool and the missing field. Also (FR-003), via the
   T005 harness's `ListTools`: every tool has a non-empty description and every input-schema
   property has a non-empty `description`; failures name the tool and field
-- [ ] T015a [P] Add `internal/tools/architecture_test.go` (FR-006, FR-008), a guard in place before
+- [X] T015a [P] Add `internal/tools/architecture_test.go` (FR-006, FR-008), a guard in place before
   any tool or server code is written: using `go/parser`, walk every non-test `.go` file under
   `internal/` and `cmd/` (from the module root, `../..`; this covers `internal/server/health.go` and
   `main.go` too) and fail, naming file and line, if it calls `http.Get`, `http.Post`, `http.Head`,
@@ -159,26 +159,26 @@ starts and lists tools. No tool exists yet at the end of this phase.
 
 ### Minimal config, server and entry point (tests first)
 
-- [ ] T016 [P] Write `internal/config/config_test.go` for `Parse(args []string) (Config, error)`:
+- [X] T016 [P] Write `internal/config/config_test.go` for `Parse(args []string) (Config, error)`:
   missing `--multiroom-url` → usage error; URL must be `http`/`https` with a host (trailing `/`
   accepted); `--port` default 3001, must be integer 1–65535; `-h`/`--help` → `ErrHelp`; unknown flag →
   usage error
-- [ ] T017 Implement `internal/config/config.go` to pass T016 (stdlib `flag.FlagSet` with
+- [X] T017 Implement `internal/config/config.go` to pass T016 (stdlib `flag.FlagSet` with
   `ContinueOnError`; `Usage()` text matching contracts/server.md)
-- [ ] T018 [P] Write `internal/server/server_test.go` end-to-end: `httptest.NewServer(server.Handler(
+- [X] T018 [P] Write `internal/server/server_test.go` end-to-end: `httptest.NewServer(server.Handler(
   mcpServer, hubClient, hubURL))` + `mcp.StreamableClientTransport` → initialize and `ListTools`
   succeed without a session ID; `GET /mcp` → 405; `GET /nope` → 404
-- [ ] T019 Implement `internal/server/server.go` to pass T018: `Handler(s *mcp.Server, client
+- [X] T019 Implement `internal/server/server.go` to pass T018: `Handler(s *mcp.Server, client
   *http.Client, hubURL string) http.Handler` (client and URL are used by `/health`, T055) with a mux
   mounting `mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return s },
   &mcp.StreamableHTTPOptions{Stateless: true, PropagateRequestCancellation: true})` at `/mcp`
   (research R6; no CORS headers; SDK localhost protection left on) and 404 for everything else
-- [ ] T019a [P] Write `cmd/sonora-mcp/main_test.go` for `run(ctx context.Context, args []string,
+- [X] T019a [P] Write `cmd/sonora-mcp/main_test.go` for `run(ctx context.Context, args []string,
   stdout, stderr io.Writer) int` (spec US5 AS1–2, FR-013; `ctx` lets T053 stand in for a stop signal): `-h` and `--help` → usage on stdout, returns 0;
   no `--multiroom-url` → usage on stderr, returns 2; invalid `--port` → message + usage on
   stderr, returns 2; `--port` already bound by the test (listen error) → message on stderr,
   returns 1
-- [ ] T020 Implement `cmd/sonora-mcp/main.go` to pass T019a: `main` only calls
+- [X] T020 Implement `cmd/sonora-mcp/main.go` to pass T019a: `main` only calls
   `os.Exit(run(context.Background(), os.Args[1:], os.Stdout, os.Stderr))`; `run` does `config.Parse(args)` (help → usage
   to stdout, return 0; error → message + usage to stderr, return 2); `hub.NewClient()`; `mcp.NewServer` with
   `Implementation{Name: "sonora-mcp", Version: version.Version}`; `tools.Register`;
