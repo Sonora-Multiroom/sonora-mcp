@@ -74,3 +74,17 @@ func TestErrorNetwork(t *testing.T) {
 
 	expectErrorPrefix(t, callTool(t, s, "listOutputs", map[string]any{}), "Network:")
 }
+
+// TestErrorNotFoundNamesMissingTarget covers a 404 that can mean more than
+// one missing resource: the error names the one the hub reports missing.
+func TestErrorNotFoundNamesMissingTarget(t *testing.T) {
+	hub := newFakeHub(t)
+	hub.handle("POST", "/api/v2/routes/r-1/transfer", http.StatusNotFound,
+		`{"type":"urn:multiroom:error:not-found","title":"Resource Not Found","detail":"Output not found: garage","status":404}`)
+	s := newTestSession(t, hub.URL, nil)
+
+	res := callTool(t, s, "transferRoute", map[string]any{"routeId": "r-1", "targetId": "garage", "targetType": "SINGLE_OUTPUT"})
+	if got := errorText(res); got != "NotFound: output not found: garage" {
+		t.Errorf("error = %q, want %q", got, "NotFound: output not found: garage")
+	}
+}
