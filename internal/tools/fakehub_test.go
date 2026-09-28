@@ -52,11 +52,15 @@ type fakeHub struct {
 	mu       sync.Mutex
 	routes   map[string]fakeRoute
 	received []recordedRequest
+
+	// cancelled receives the path of every delayed request whose context
+	// was cancelled before the delay ended.
+	cancelled chan string
 }
 
 func newFakeHub(t *testing.T) *fakeHub {
 	t.Helper()
-	h := &fakeHub{routes: map[string]fakeRoute{}}
+	h := &fakeHub{routes: map[string]fakeRoute{}, cancelled: make(chan string, 16)}
 	h.Server = httptest.NewServer(http.HandlerFunc(h.serve))
 	t.Cleanup(h.Close)
 	return h
@@ -130,6 +134,10 @@ func (h *fakeHub) serve(w http.ResponseWriter, r *http.Request) {
 		select {
 		case <-time.After(route.delay):
 		case <-r.Context().Done():
+			select {
+			case h.cancelled <- path:
+			default:
+			}
 			return
 		}
 	}

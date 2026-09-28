@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/tiger-seo/sonora-mcp/internal/tools"
@@ -57,6 +58,56 @@ func TestMCPIsStateless(t *testing.T) {
 	if id := resp.Header.Get("Mcp-Session-Id"); id != "" {
 		t.Errorf("Mcp-Session-Id = %q, want none (stateless)", id)
 	}
+}
+
+// TestCancelOverHTTP checks that cancelling a tool call on the client
+// cancels the hub request over the real /mcp handler (FR-007, research R6).
+func TestCancelOverHTTP(t *testing.T) {
+	started := make(chan struct{}, 1)
+	cancelled := make(chan struct{}, 1)
+	hub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		started <- struct{}{}
+		<-r.Context().Done()
+		cancelled <- struct{}{}
+	}))
+	t.Cleanup(hub.Close)
+
+	s := mcp.NewServer(&mcp.Implementation{Name: "sonora-mcp", Version: "test"}, nil)
+	client := &http.Client{Timeout: 5 * time.Second}
+	tools.Register(s, client, hub.URL)
+	ts := httptest.NewServer(Handler(s, client, hub.URL))
+	t.Cleanup(ts.Close)
+
+	mc := mcp.NewClient(&mcp.Implementation{Name: "test-client", Version: "test"}, nil)
+	cs, err := mc.Connect(context.Background(), &mcp.StreamableClientTransport{Endpoint: ts.URL + "/mcp"}, nil)
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	defer cs.Close()
+	if v := cs.InitializeResult().ProtocolVersion; v < "2026-07-28" {
+		t.Fatalf("negotiated protocol version %q, want >= 2026-07-28", v)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_, _ = cs.CallTool(ctx, &mcp.CallToolParams{Name: "getMasterMute", Arguments: map[string]any{}})
+	}()
+
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("hub received no request")
+	}
+	cancel()
+
+	select {
+	case <-cancelled:
+	case <-time.After(2 * time.Second): // well before the 5 s client timeout
+		t.Fatal("hub request was not cancelled")
+	}
+	<-done
 }
 
 func TestOtherRoutes(t *testing.T) {
