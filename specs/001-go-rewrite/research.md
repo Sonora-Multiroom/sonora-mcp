@@ -185,7 +185,10 @@ than recalled. The hub facts were checked against sonora-cli branch `010-public-
   `linux/arm64` binary (`sonora-mcp-linux-arm64`) was uploaded to. At install time the script
   downloads that asset with `curl -fsSL` from
   `https://github.com/tiger-seo/sonora-mcp/releases/download/${RELEASE_TAG}/sonora-mcp-linux-arm64`
-  to `/usr/local/bin/sonora-mcp` (0755; fails with a clear message on a non-2xx response); it
+  to a temp file in `/usr/local/bin`, then `chmod 0755` and `mv -f` onto
+  `/usr/local/bin/sonora-mcp` (writing over a running executable fails with "Text file busy"; a
+  rename does not, and a failed download leaves the installed binary intact); it fails with a clear
+  message on a non-2xx response, and refuses to run unless `uname -m` is `aarch64`; it
   takes flags `--hub-url` (required), `--port`, `--host`, `--version` (overrides the baked-in
   `RELEASE_TAG` to install a different release); writes the env file and the unit; runs
   `daemon-reload`; `enable --now` or `restart` if already installed; idempotent; prints status.

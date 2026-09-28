@@ -21,6 +21,10 @@ sonora-mcp -h | --help
 | Cannot listen (port in use, address not local) | Error on stderr | 1 |
 | Stop signal (Ctrl+C, SIGTERM) after draining | Shutdown log line | 0 |
 
+A listen failure exits 1 without usage text: the flags parsed and were valid, the environment
+refused them (port taken, address not on this machine), so repeating the usage would not help. It is
+a startup failure, not a flag error, and still stops the server before it serves (Principle IV).
+
 Startup log (stderr): version, hub URL, listen address, number of tools registered.
 
 ## HTTP endpoints
@@ -78,12 +82,12 @@ sudo ./install.sh --hub-url <url> [--port <port>] [--host <address>] [--version 
 
 | Effect | Detail |
 |---|---|
-| Binary | Downloaded with `curl -fsSL` from `https://github.com/tiger-seo/sonora-mcp/releases/download/<tag>/sonora-mcp-linux-arm64` (`<tag>` = `--version` if given, else the script's baked-in `RELEASE_TAG`) to `/usr/local/bin/sonora-mcp` (mode 0755) |
+| Binary | Downloaded with `curl -fsSL` from `https://github.com/tiger-seo/sonora-mcp/releases/download/<tag>/sonora-mcp-linux-arm64` (`<tag>` = `--version` if given, else the script's baked-in `RELEASE_TAG`) to a temp file in `/usr/local/bin`, set to mode 0755, then renamed (`mv -f`) onto `/usr/local/bin/sonora-mcp`. The rename works while the old binary is running, and a failed download leaves it untouched |
 | Config | `/etc/default/sonora-mcp` with `SONORA_HUB_URL`, `SONORA_PORT`, `SONORA_HOST_ARG` |
 | Unit | Written from the script's embedded heredoc to `/etc/systemd/system/sonora-mcp.service` |
 | Service | `daemon-reload`; enabled at boot; started, or restarted if already running |
 | Re-run | Overwrites binary, config and unit; restarts; never duplicates |
-| Exit | 0 on success with `systemctl status` summary; non-zero with a message if not root, `--hub-url` missing, systemd or `curl` absent, or the download fails (network error or non-2xx, e.g. unknown tag) |
+| Exit | 0 on success with `systemctl status` summary; non-zero with a message if not root, `--hub-url` missing, systemd or `curl` absent, the OS is not 64-bit ARM (`uname -m` ≠ `aarch64`), or the download fails (network error or non-2xx, e.g. unknown tag) |
 
 The embedded systemd unit runs `sonora-mcp` with the configured flags as a dynamic unprivileged
 user, after the network is up. Restarts on failure after 2 seconds. Stopped with SIGTERM, which

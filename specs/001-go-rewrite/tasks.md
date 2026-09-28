@@ -63,6 +63,9 @@ written first and must fail before its implementation task starts. All tests run
 - [ ] T003 [P] Create `internal/version/version.go`: package `version` with
   `var Version = "dev"` and a godoc saying it is set via
   `-ldflags "-X github.com/tiger-seo/sonora-mcp/internal/version.Version=<v>"`
+- [ ] T003a [P] Commit the design note `docs/future/go-rewrite-shared-hub-client.md` on its own
+  (`docs:` commit) so the references to it from spec.md, the constitution's Sync Impact Report and
+  plan decisions resolve after merge
 
 ---
 
@@ -109,7 +112,9 @@ starts and lists tools. No tool exists yet at the end of this phase.
   appears in `ListTools` with the given description, the explicit input schema, the output schema
   inferred from `Out`, and annotations per Kind (read-only → `readOnlyHint: true`; idempotent →
   `readOnlyHint: false, destructiveHint: false, idempotentHint: true`; state-changing → both false;
-  destructive → `destructiveHint: true`); invalid arguments never invoke the handler; a handler that
+  destructive → `destructiveHint: true`); invalid arguments return a `CallToolResult` with
+  `isError: true` whose text starts `validating "arguments"` (a tool error, not a JSON-RPC error —
+  Principle II, SC-004) and never invoke the handler; a handler that
   panics returns `isError` with text `Internal: unexpected server error` and a following call still
   succeeds; the registry records the tool's `toolSpec`
 - [ ] T011 [P] Write `internal/tools/logging_test.go`: middleware from `LogToolCalls(logger)` writes
@@ -141,6 +146,13 @@ starts and lists tools. No tool exists yet at the end of this phase.
   `deleted` confirmation); failures name the tool and the missing field. Also (FR-003), via the
   T005 harness's `ListTools`: every tool has a non-empty description and every input-schema
   property has a non-empty `description`; failures name the tool and field
+- [ ] T015a [P] Add `internal/tools/architecture_test.go` (FR-006, FR-008), a guard in place before
+  any tool or server code is written: using `go/parser`, walk every non-test `.go` file under
+  `internal/` and `cmd/` (from the module root, `../..`; this covers `internal/server/health.go` and
+  `main.go` too) and fail, naming file and line, if it calls `http.Get`, `http.Post`, `http.Head`,
+  `http.NewRequest` or references `http.DefaultClient` (all hub access MUST go through `hub.*`,
+  Principle I), or declares a package-level `var` holding a `hub` resource type (Principle III — no
+  cached hub state); it runs as part of `go test ./...`, so it needs no separate merge-gate step
 
 ### Minimal config, server and entry point (tests first)
 
@@ -319,8 +331,9 @@ never answering; plus a concurrent healthy call (spec US4).
 - [ ] T046 [P] [US4] Write `internal/tools/errors_scenarios_test.go`: `getOutput garage` with hub 404
   → `NotFound:` and the message names `garage`; `setOutputVolume` with hub 400 problem
   `{"detail":"output is disabled"}` → `Validation: output is disabled`; `playback` with 503 →
-  `ServiceUnavailable:`; `listOutputs` with body `not json` → `MalformedResponse:`; `listOutputs`
-  against a closed port → `Network:`
+  `ServiceUnavailable:`; `listOutputs` with body `not json` → `MalformedResponse:`; `getOutput`
+  with a wrong-shape JSON body (`[]`, and `{"volume":"loud"}`) → `MalformedResponse:` with no
+  partial data in the result (spec Edge Cases); `listOutputs` against a closed port → `Network:`
 - [ ] T047 [P] [US4] Write `internal/tools/timeout_test.go`: with the harness given an
   `http.Client{Timeout: 200ms}` and a fake-hub delay of 2 s, `listOutputs` returns `Timeout:` in under
   1 s; meanwhile a concurrent `getMasterMute` on a non-delayed route succeeds (FR-011, SC-003)
@@ -360,7 +373,9 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
 - [ ] T053 [P] [US5] Extend `cmd/sonora-mcp/main_test.go` (from T019a): the version string used by the MCP
   `Implementation`, `/health` and the startup log line all come from `version.Version` (build a server
   via the same constructor `main` uses and compare); the `*http.Client` that constructor passes to
-  the tools and `/health` has a non-zero `Timeout` (it comes from `hub.NewClient()`, SC-003)
+  the tools and `/health` has `0 < Timeout ≤ 5s` (it comes from `hub.NewClient()`; keeps every tool
+  under SC-003's 10 s and inside the 6 s shutdown drain); `--host "not a host!"` → message + usage on
+  stderr, returns 2 (FR-013a)
 
 ### Implementation
 
@@ -384,9 +399,13 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   per contracts/server.md: a `RELEASE_TAG="dev"` placeholder near the top (set to the
   release tag only on `main`, by T072); flags `--hub-url` (required), `--port` (default 3001), `--host` (optional →
   `SONORA_HOST_ARG=--host <addr>`), `--version` (overrides `RELEASE_TAG`); checks root, systemd
-  and `curl` present; downloads the binary with `curl -fsSL -o /usr/local/bin/sonora-mcp
-  https://github.com/tiger-seo/sonora-mcp/releases/download/<tag>/sonora-mcp-linux-arm64` (`<tag>`
-  = `--version` or `RELEASE_TAG`), `chmod 0755`, and fails with a clear message on a network error
+  and `curl` present, and that `uname -m` is `aarch64` (else a clear "64-bit ARM OS required"
+  message and non-zero exit, before downloading anything); downloads the binary with `curl -fsSL`
+  from `https://github.com/tiger-seo/sonora-mcp/releases/download/<tag>/sonora-mcp-linux-arm64`
+  (`<tag>` = `--version` or `RELEASE_TAG`) to a temp file in `/usr/local/bin` (`mktemp`, removed by
+  an `EXIT` trap on failure), `chmod 0755`, then `mv -f` onto `/usr/local/bin/sonora-mcp` — an
+  atomic rename, so re-running while the service is up doesn't fail with "Text file busy" and a
+  failed download leaves the installed binary intact; fails with a clear message on a network error
   or non-2xx response; writes the T058 unit to `/etc/systemd/system/sonora-mcp.service` and the
   env file to `/etc/default/sonora-mcp`; `systemctl daemon-reload`; `enable` + `restart`
   (idempotent on re-run); prints `systemctl --no-pager status sonora-mcp`; run `shellcheck` on the
@@ -446,16 +465,9 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
 
 ## Phase 9: Polish & merge readiness
 
-- [ ] T068a Add `internal/tools/architecture_test.go` (FR-006, FR-008): using `go/parser`, walk
-  every non-test `.go` file under `internal/` and `cmd/` (from the module root, `../..`; this
-  covers `internal/server/health.go` and `main.go` too) and fail, naming file and line, if it calls
-  `http.Get`, `http.Post`, `http.Head`, `http.NewRequest` or references `http.DefaultClient` (all
-  hub access MUST go through `hub.*`, Principle I), or declares a package-level `var` holding a
-  `hub` resource type (Principle III — no cached hub state); this runs as part of `go test ./...`,
-  so it needs no separate merge-gate step
 - [ ] T068 Run the merge gate from quickstart.md §2 on Windows: `gofmt -l .` empty, `go vet ./...`,
-  `go build ./...`, `go test ./...` (with the network disabled once, SC-006; includes the T068a
-  architecture check written just before). Then run `go vet ./...` and `go test -race ./...` on Linux (WSL or a
+  `go build ./...`, `go test ./...` (with the network disabled once, SC-006; includes the T015a
+  architecture check). Then run `go vet ./...` and `go test -race ./...` on Linux (WSL or a
   `golang:1.27` container with the workspace mounted) to meet FR-019 / Principle V ("pass on
   Windows and Linux"); `-race` runs only there because it needs cgo and a C toolchain, which the
   Windows setup does not have. Record both results in the PR description
@@ -497,16 +509,16 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
 
 ### Parallel opportunities
 
-- Setup: T002, T003.
-- Foundational: T004, T005, T006, T008, T010, T011, T016, T018, T019a (all separate files).
+- Setup: T002, T003, T003a.
+- Foundational: T004, T005, T006, T008, T010, T011, T015a, T016, T018, T019a (all separate files).
 - US1: T021–T025 together; then T026–T030 together (separate files).
 - US2: T032–T035; then T036–T039.
 - US3: T040–T042; then T043–T045.
 - US4: T046–T048.
 - US5: T050–T053; T058 then T059 (same file, `deploy/pi/install.sh`), anytime in the phase.
 - US5 can run alongside US2–US4 once US1 is done (different packages).
-- T065 and T071 were removed (the untracked `run*.sh` launchers are deleted in T064; the untracked
-  `docs/future/` design note is not part of this feature); the IDs are not reused.
+- T065 and T071 were removed (the untracked `run*.sh` launchers are deleted in T064; the `docs/future/`
+  design note is committed by T003a instead); the IDs are not reused.
 
 ---
 

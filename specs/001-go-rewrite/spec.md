@@ -292,7 +292,7 @@ locally and confirm the conformance test fails.
 - **FR-013a**: The server MUST accept connections on all network addresses by default (as
   today), and MUST accept an optional `--host <address>` flag that restricts the listening
   address (e.g. `127.0.0.1` for local-only use). An invalid address MUST stop startup with
-  usage text and a non-zero exit status.
+  usage text and exit status 2 (as for any invalid flag value, FR-013).
 - **FR-014**: The server MUST serve the MCP protocol over streamable HTTP at `/mcp`, without
   sessions, so existing client configurations work unchanged.
 - **FR-015**: The server MUST serve `GET /health` returning status, server name, version and a
@@ -422,8 +422,9 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
   scope; the server stays on a trusted home LAN (constitution: Security).
 - The Pi runs a Linux distribution with a standard service manager (Raspberry Pi OS / systemd),
   as the hub's Pi does; the operator can run the install script with administrator rights.
-- The time limit per hub call is the shared client's default (5 seconds), except where the
-  shared client defines a longer one for a specific operation.
+- The time limit per hub call is the shared client's default (5 seconds), from one client shared
+  by all 24 tools; none of them needs a longer bound. A future tool that does (e.g. text-to-speech)
+  must also revisit the shutdown drain and SC-003.
 - The Pi has outbound internet access to GitHub (`github.com`, `objects.githubusercontent.com`)
   at install time only, to download the release binary the install script fetches; no inbound
   exposure changes and no internet access is needed once the server is running.

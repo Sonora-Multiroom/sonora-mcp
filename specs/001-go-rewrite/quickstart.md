@@ -25,7 +25,7 @@ cd D:\projects-sonora\sonora-mcp
 gofmt -l .          # expect no output
 go vet ./...
 go build ./...
-go test ./...      # expect PASS with the network disabled (SC-006); includes the T068a
+go test ./...      # expect PASS with the network disabled (SC-006); includes the T015a
                      # architecture check (FR-006/FR-008: no direct net/http hub calls or
                      # cached hub state anywhere under internal/ or cmd/)
 ```
