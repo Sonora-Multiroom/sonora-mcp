@@ -239,4 +239,4 @@ published as prereleases. Pull requests run gofmt, vet and `go test -race`.
 
 ## License
 
-AGPL-3.0
+[GNU Affero General Public License v3.0](LICENSE)
