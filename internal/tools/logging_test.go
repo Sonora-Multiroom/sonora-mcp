@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"log/slog"
+	"net/url"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/Sonora-Multiroom/sonora-cli/hub"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -82,5 +84,49 @@ func TestLogToolCalls(t *testing.T) {
 				t.Errorf("log line %q missing %q", line, want)
 			}
 		}
+	}
+}
+
+type blockInput struct {
+	Name string `json:"name" jsonschema:"Anything"`
+}
+
+func TestLogToolCallsCanceled(t *testing.T) {
+	var buf syncBuffer
+	logger := slog.New(slog.NewTextHandler(&buf, nil))
+
+	started := make(chan struct{})
+	server := mcp.NewServer(&mcp.Implementation{Name: "test", Version: "test"}, nil)
+	add(server,
+		toolSpec{Name: "blockLog", Description: "Block.", Kind: ReadOnly, Method: "GET", Path: "/block"},
+		inputSchema[blockInput](),
+		func(ctx context.Context, _ blockInput) (*echoOutput, error) {
+			close(started)
+			<-ctx.Done()
+			// What a hub call returns when its request is canceled.
+			return nil, &url.Error{Op: "Get", URL: "http://hub/block", Err: ctx.Err()}
+		})
+	server.AddReceivingMiddleware(LogToolCalls(logger))
+	s := connect(t, server)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_, _ = s.CallTool(ctx, &mcp.CallToolParams{Name: "blockLog", Arguments: map[string]any{"name": "a"}})
+	}()
+	<-started
+	cancel()
+	<-done
+
+	deadline := time.Now().Add(2 * time.Second)
+	for len(buf.lines()) == 0 {
+		if time.Now().After(deadline) {
+			t.Fatal("canceled call was not logged")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if line := buf.lines()[0]; !strings.Contains(line, "outcome=Canceled") {
+		t.Errorf("log line %q, want outcome=Canceled", line)
 	}
 }

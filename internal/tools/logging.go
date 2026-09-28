@@ -2,6 +2,7 @@ package tools
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"time"
 
@@ -12,9 +13,14 @@ import (
 // because its arguments did not match the input schema.
 const outcomeInvalidInput = "InvalidInput"
 
+// outcomeCanceled is the logged outcome of a call the client canceled
+// before it finished. The hub call fails with context.Canceled, which would
+// otherwise be logged as a Network error.
+const outcomeCanceled = "Canceled"
+
 // LogToolCalls returns receiving middleware that writes one log record per
 // tools/call with the tool name, its arguments as JSON, the outcome ("ok",
-// the error category, or InvalidInput) and the duration (FR-012). Other
+// the error category, InvalidInput, or Canceled) and the duration (FR-012). Other
 // methods are not logged.
 func LogToolCalls(logger *slog.Logger) mcp.Middleware {
 	return func(next mcp.MethodHandler) mcp.MethodHandler {
@@ -35,14 +41,17 @@ func LogToolCalls(logger *slog.Logger) mcp.Middleware {
 			logger.Info("tool call",
 				"tool", name,
 				"args", args,
-				"outcome", outcome(res, err),
+				"outcome", outcome(ctx, res, err),
 				"duration", time.Since(start))
 			return res, err
 		}
 	}
 }
 
-func outcome(res mcp.Result, err error) string {
+func outcome(ctx context.Context, res mcp.Result, err error) string {
+	if errors.Is(ctx.Err(), context.Canceled) {
+		return outcomeCanceled
+	}
 	if err != nil {
 		return "ProtocolError"
 	}
