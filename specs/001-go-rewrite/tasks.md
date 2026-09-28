@@ -370,19 +370,19 @@ an assistant with the existing config, request `/health` (spec US5, quickstart Â
 
 ### Tests (write first, must fail)
 
-- [ ] T050 [P] [US5] Extend `internal/config/config_test.go`: `--host` default empty (all addresses);
+- [X] T050 [P] [US5] Extend `internal/config/config_test.go`: `--host` default empty (all addresses);
   accepts `127.0.0.1`, `::1`, `localhost`; rejects `not a host!` with a usage error;
   `Config.ListenAddr()` = `:3001`, `127.0.0.1:3001`, `[::1]:3001`
-- [ ] T051 [P] [US5] Write `internal/server/health_test.go`: `GET /health` â†’ 200,
+- [X] T051 [P] [US5] Write `internal/server/health_test.go`: `GET /health` â†’ 200,
   `Content-Type: application/json`, body `{"status":"ok","server":"sonora-mcp","version":<v>,
   "hub":"reachable"}` when `hub.GetMasterMute` succeeds; `"hub":"unreachable"` (still 200) when the
   fake hub is down or delays 5 s, answered in â‰¤ 2.5 s (the 2 s bound of spec US5 AS6 / SC-005 is
   enforced by the `context.WithTimeout` in T055; the extra 0.5 s only absorbs test-scheduling
   jitter)
-- [ ] T052 [P] [US5] Write `internal/server/shutdown_test.go`: `Run(ctx, srv)` serving on a free port;
+- [X] T052 [P] [US5] Write `internal/server/shutdown_test.go`: `Run(ctx, srv)` serving on a free port;
   start a tool call against a hub delayed 300 ms, cancel `ctx` (simulated signal); the call completes
   successfully, new connections are refused, `Run` returns nil within 6 s
-- [ ] T053 [P] [US5] Extend `cmd/sonora-mcp/main_test.go` (from T019a): the version string used by the MCP
+- [X] T053 [P] [US5] Extend `cmd/sonora-mcp/main_test.go` (from T019a): the version string used by the MCP
   `Implementation`, `/health` and the startup log line all come from `version.Version` (build a server
   via the same constructor `main` uses and compare); the `*http.Client` that constructor passes to
   the tools and `/health` has `0 < Timeout â‰¤ 5s` (it comes from `hub.NewClient()`; keeps every tool
@@ -393,24 +393,24 @@ an assistant with the existing config, request `/health` (spec US5, quickstart Â
 
 ### Implementation
 
-- [ ] T054 [US5] Add `--host` and `ListenAddr()` to `internal/config/config.go` (pass T050; update
+- [X] T054 [US5] Add `--host` and `ListenAddr()` to `internal/config/config.go` (pass T050; update
   `Usage()`)
-- [ ] T055 [US5] Implement `internal/server/health.go` and mount `/health` in `server.go` (pass T051;
+- [X] T055 [US5] Implement `internal/server/health.go` and mount `/health` in `server.go` (pass T051;
   `context.WithTimeout(r.Context(), 2*time.Second)` around `hub.GetMasterMute`; nothing cached)
-- [ ] T056 [US5] Implement `Run(ctx context.Context, srv *http.Server) error` in
+- [X] T056 [US5] Implement `Run(ctx context.Context, srv *http.Server) error` in
   `internal/server/server.go` (pass T052: `ListenAndServe` in a goroutine; on `ctx.Done()`
   `srv.Shutdown` with a 6 s deadline; `http.ErrServerClosed` is not an error)
-- [ ] T057 [US5] Update `cmd/sonora-mcp/main.go`: listen on `cfg.ListenAddr()`;
+- [X] T057 [US5] Update `cmd/sonora-mcp/main.go`: listen on `cfg.ListenAddr()`;
   `signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)` on the `ctx` passed to `run`;
   `server.Run`; `run` returns 0 after drain (pass T053); log
   shutdown; factor server construction into a function used by T053
-- [ ] T058 [US5] Write the embedded systemd unit inside `deploy/pi/install.sh` per
+- [X] T058 [US5] Write the embedded systemd unit inside `deploy/pi/install.sh` per
   contracts/server.md and research R13 (a heredoc, not a separate file):
   `After=network-online.target`, `Wants=network-online.target`, `DynamicUser=yes`,
   `EnvironmentFile=/etc/default/sonora-mcp`, `ExecStart=/usr/local/bin/sonora-mcp --multiroom-url
   ${SONORA_HUB_URL} --port ${SONORA_PORT} $SONORA_HOST_ARG`, `Restart=on-failure`, `RestartSec=2`,
   `NoNewPrivileges=yes`, `ProtectSystem=strict`, `ProtectHome=yes`, `WantedBy=multi-user.target`
-- [ ] T059 [US5] (after T058, same file) Finish `deploy/pi/install.sh` (bash, `set -euo pipefail`)
+- [X] T059 [US5] (after T058, same file) Finish `deploy/pi/install.sh` (bash, `set -euo pipefail`)
   per contracts/server.md: a `RELEASE_TAG="dev"` placeholder near the top (set to the
   release tag only on `main`, by T072); flags `--hub-url` (required), `--port` (default 3001), `--host` (optional â†’
   `SONORA_HOST_ARG=--host <addr>`), `--version` (overrides `RELEASE_TAG`); checks root, systemd
@@ -425,7 +425,7 @@ an assistant with the existing config, request `/health` (spec US5, quickstart Â
   env file to `/etc/default/sonora-mcp`; `systemctl daemon-reload`; `enable` + `restart`
   (idempotent on re-run); prints `systemctl --no-pager status sonora-mcp`; run `shellcheck` on the
   file if available
-- [ ] T060 [US5] Verify cross-build with the workspace off, so the binary is built from the pushed
+- [X] T060 [US5] Verify cross-build with the workspace off, so the binary is built from the pushed
   sonora-cli pseudo-version in `go.mod` and not from a local checkout (re-run
   `go get github.com/Sonora-Multiroom/sonora-cli@010-public-hub-package` first if the branch has
   moved): `GOWORK=off GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "-X
@@ -454,9 +454,9 @@ an assistant with the existing config, request `/health` (spec US5, quickstart Â
 **Independent Test**: no Node artifacts tracked; a deliberate constraint change fails the tests
 (spec US6, quickstart Â§2, Â§9).
 
-- [ ] T062 [US6] Add an inventory test to `internal/tools/conformance_test.go`: the registered tool
+- [X] T062 [US6] Add an inventory test to `internal/tools/conformance_test.go`: the registered tool
   names equal exactly the 24 names in contracts/tools.md (no more, no fewer)
-- [ ] T063 [US6] Drift check (manual, not committed): set `setOutputVolume`'s maximum to 150, confirm
+- [X] T063 [US6] Drift check (manual, not committed): set `setOutputVolume`'s maximum to 150, confirm
   `go test ./internal/tools/` fails naming `setOutputVolume`, `volume`, `maximum`, 150 vs 100; revert
 - [ ] T064 [US6] Delete Node.js sources and tooling. First run `git status --short`: tracked Node
   files must have no local changes, or `git rm` refuses them. The known case is an uncommitted,
