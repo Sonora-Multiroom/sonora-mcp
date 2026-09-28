@@ -513,6 +513,19 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   confirm `go.mod` has no pseudo-version or `replace` for sonora-cli (constitution: dependency pinning)
 - [ ] T070 Run the full quickstart.md validation (§3–§7) against the real hub and MCP Inspector,
   including VS Code with the existing `.vscode/mcp.json`; record results in the PR description
+  — **Progress (2026-09-28, v1.1.0-rc.1 on the Pi, port 3002)**: all 10 read-only tools and the
+  NotFound/invalid-input paths checked over the network; 26/27 state-changing steps passed against
+  the real hub with every change restored (volume, mute — incl. the sonora-cli mute fix — enabled,
+  group tools, master mute, createInput/setInputEnabled/deleteInput, createRoute/getRoute/
+  deleteRoute, playback); `setRoutePause` returned `Validation: Pause is not supported for this
+  input type` for the non-pauseable stream (correct); `deleteInput` of a static input →
+  `Validation:` (correct). Found T073. Remaining: MCP Inspector and VS Code with `.vscode/mcp.json`
+- [ ] T073 Fix in sonora-cli (Principle I), then bump: `hub.TransferRoute` reports every 404 as
+  `route not found: <routeId>` and `hub.CreateRoute` every 404 as `target not found`, although the
+  spec's 404 means "route or target" / "input or target" and the hub's problem body names the
+  missing resource (live: transfer to a missing target → `NotFound: route not found:
+  route-mcp-t070-to-office`). On 404, decode the problem body and use its detail; release
+  sonora-cli v0.1.1; `go get …@v0.1.1` here and re-run the gate
 - [ ] T072 Cut the `v1.1.0` release from `main` (FR-017c; constitution: dependency pinning). Before
   merge, as the last commit of the PR: set `RELEASE_TAG="v1.1.0"` in `deploy/pi/install.sh`. After
   the PR is merged: tag `main` `v1.1.0` with `release.sh` (the release workflow builds and
