@@ -266,3 +266,29 @@ func TestRegisterCount(t *testing.T) {
 		t.Errorf("Register returned %d, ListTools has %d tools", n, len(res.Tools))
 	}
 }
+
+// contractTools are the 24 tool names in contracts/tools.md, the
+// compatibility contract with the Node.js server (FR-001).
+var contractTools = []string{
+	"listInputs", "getInput", "createInput", "deleteInput", "setInputEnabled",
+	"listOutputs", "getOutput", "setOutputVolume", "setOutputMute", "setOutputEnabled",
+	"listGroups", "getGroup", "setGroupVolume", "setGroupMute", "setGroupEnabled",
+	"listRoutes", "getRoute", "createRoute", "deleteRoute", "transferRoute", "setRoutePause",
+	"playback", "getMasterMute", "setMasterMute",
+}
+
+// TestToolInventory checks that the server lists exactly the contract's
+// tools, no more and no fewer.
+func TestToolInventory(t *testing.T) {
+	listed := listedTools(t)
+	for _, name := range contractTools {
+		if _, ok := listed[name]; !ok {
+			t.Errorf("tool %q from contracts/tools.md is not registered", name)
+		}
+	}
+	for name := range listed {
+		if !slices.Contains(contractTools, name) {
+			t.Errorf("tool %q is registered but not in contracts/tools.md", name)
+		}
+	}
+}
