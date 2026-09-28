@@ -290,31 +290,31 @@ create → delete an input, against the fake hub (spec US3).
 
 ### Tests (write first, must fail)
 
-- [ ] T040 [P] [US3] Write `internal/tools/routes_write_test.go`: `createRoute` (`POST /api/v2/routes`
+- [X] T040 [P] [US3] Write `internal/tools/routes_write_test.go`: `createRoute` (`POST /api/v2/routes`
   body `{"inputId","targetId","targetType"}`, state-changing), `transferRoute`
   (`POST /api/v2/routes/{routeId}/transfer` body `{"targetId","targetType"}`, state-changing),
   `setRoutePause` (`PUT /api/v2/routes/{routeId}/pause` `{"paused":true}` to pause, then
   `{"paused":false}` to resume with the `false` key present, idempotent), `deleteRoute`
   (`DELETE /api/v2/routes/{routeId}`, hub 204 → `{"deleted": true, "routeId": "<id>"}`,
   destructive); `targetType` `"SPEAKER"` rejected with no hub request
-- [ ] T041 [P] [US3] Write `internal/tools/inputs_write_test.go`: `createInput` (`POST /api/v2/inputs`;
+- [X] T041 [P] [US3] Write `internal/tools/inputs_write_test.go`: `createInput` (`POST /api/v2/inputs`;
   with `enabled`/`autoRemove` omitted the request body has **no** `enabled`/`autoRemove` keys; with
   them given they are sent; `inputId` `"bad id!"` rejected — pattern `^[a-zA-Z0-9\-_]{1,255}$`),
   `deleteInput` (`DELETE /api/v2/inputs/{inputId}`, 204 → `{"deleted": true, "inputId": "<id>"}`,
   destructive; hub 400 for a static input → text starts `Validation:`)
-- [ ] T042 [P] [US3] Write `internal/tools/playback_test.go`: `playback` (`POST /api/v2/play` body with
+- [X] T042 [P] [US3] Write `internal/tools/playback_test.go`: `playback` (`POST /api/v2/play` body with
   `uri`, `targetId`, `targetType`; `displayName`/`volume` omitted when not given, sent when given;
   `volume` 101 rejected; result is PlaybackResponse with `inputId`, `route`, `message`;
   state-changing; hub 502 → text starts `SourceUnreachable:`)
 
 ### Implementation
 
-- [ ] T043 [P] [US3] Implement `createRoute`, `transferRoute`, `setRoutePause`, `deleteRoute` in
+- [X] T043 [P] [US3] Implement `createRoute`, `transferRoute`, `setRoutePause`, `deleteRoute` in
   `internal/tools/routes.go` (`hub.CreateRoute`, `hub.TransferRoute`, `hub.SetPauseState`,
   `hub.DeleteRoute`)
-- [ ] T044 [P] [US3] Implement `createInput`, `deleteInput` in `internal/tools/inputs.go`
+- [X] T044 [P] [US3] Implement `createInput`, `deleteInput` in `internal/tools/inputs.go`
   (`hub.CreateInput` with `Enabled`/`AutoRemove` as `*bool` passed through; `hub.DeleteInput`)
-- [ ] T045 [P] [US3] Implement `playback` in `internal/tools/playback.go` (`hub.Playback`;
+- [X] T045 [P] [US3] Implement `playback` in `internal/tools/playback.go` (`hub.Playback`;
   `DisplayName`/`Volume` pointers passed through)
 
 **Checkpoint**: all 24 tools; conformance test green for all.
