@@ -1,11 +1,3 @@
-node_modules/
-dist/
-*.js
-*.d.ts
-*.d.ts.map
-*.js.map
-!.gitignore
-
 # Go
 /sonora-mcp
 /sonora-mcp.exe
