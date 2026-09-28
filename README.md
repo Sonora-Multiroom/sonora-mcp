@@ -25,7 +25,7 @@ sonora-mcp keeps no state of its own: every tool call is one request to the hub.
 
 ## Install on a Raspberry Pi
 
-One command on the Pi (64-bit Raspberry Pi OS) installs the latest release as a systemd service:
+One command on the Pi (64-bit Raspberry Pi OS) installs sonora-mcp as a systemd service:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Sonora-Multiroom/sonora-mcp/main/deploy/pi/install.sh | sudo bash -s -- --hub-url http://localhost:8080
@@ -38,7 +38,7 @@ Options go after `--hub-url`:
 | `--hub-url <url>` | — (required) | Base URL of the Multiroom Audio Hub |
 | `--port <port>` | `3001` | Port sonora-mcp listens on |
 | `--host <address>` | all addresses | Address to listen on, e.g. `127.0.0.1` |
-| `--version <tag>` | latest release | Release to install, e.g. `v1.1.0` |
+| `--version <tag>` | the release the script is pinned to (its `RELEASE_TAG`) | Release to install, e.g. `v1.1.0` |
 
 The script downloads the release archive, checks it against the release's `checksums.txt`,
 installs `/usr/local/bin/sonora-mcp`, and writes `/etc/default/sonora-mcp` and the
