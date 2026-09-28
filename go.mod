@@ -3,7 +3,7 @@ module github.com/tiger-seo/sonora-mcp
 go 1.27.0
 
 require (
-	github.com/Sonora-Multiroom/sonora-cli v0.0.18-0.20260927223403-3ee73698f2ae
+	github.com/Sonora-Multiroom/sonora-cli v0.0.18-0.20260928110723-337e03584fc4
 	github.com/google/jsonschema-go v0.4.3
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 )

@@ -15,6 +15,10 @@ const (
 
 	disabledOutputJSON = `{"outputId":"garage","displayName":"Garage","volume":0,"muted":false,"available":true,"enabled":false}`
 
+	outputVolumeJSON = `{"outputId":"kitchen","volume":35,"updatedAt":"2026-09-28T10:05:00Z"}`
+
+	groupVolumeJSON = `{"groupId":"downstairs","volume":35,"updatedAt":"2026-09-28T10:05:00Z"}`
+
 	groupJSON = `{"groupId":"downstairs","displayName":"Downstairs","outputIds":["kitchen","living-room"],"muted":false,"enabled":true}`
 
 	inputJSON = `{"inputId":"radio-1","displayName":"Radio","uri":"http://radio.example/stream","enabled":true,"autoRemove":false,"source":"STATIC","createdAt":"2026-09-01T10:00:00Z","pauseable":false}`

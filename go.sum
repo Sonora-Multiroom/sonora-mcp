@@ -1,5 +1,7 @@
 github.com/Sonora-Multiroom/sonora-cli v0.0.18-0.20260927223403-3ee73698f2ae h1:KSojgrH09BGFVBXAPRixPSlfIobCtnmT9UI/VT13wOg=
 github.com/Sonora-Multiroom/sonora-cli v0.0.18-0.20260927223403-3ee73698f2ae/go.mod h1:SzoNCuCaDWI5QXoEVQyuELf+38ZxrzYw8mu1m52ur7Q=
+github.com/Sonora-Multiroom/sonora-cli v0.0.18-0.20260928110723-337e03584fc4 h1:gZpdjwDbRGRQL0p5RJs2uXbA+9DqCe+OnEQ74A7UTpg=
+github.com/Sonora-Multiroom/sonora-cli v0.0.18-0.20260928110723-337e03584fc4/go.mod h1:SzoNCuCaDWI5QXoEVQyuELf+38ZxrzYw8mu1m52ur7Q=
 github.com/golang-jwt/jwt/v5 v5.3.1 h1:kYf81DTWFe7t+1VvL7eS+jKFVWaUnK9cB1qbwn63YCY=
 github.com/golang-jwt/jwt/v5 v5.3.1/go.mod h1:fxCRLWMO43lRc8nhHWY6LGqRcf+1gQWArsqaEUEa5bE=
 github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=

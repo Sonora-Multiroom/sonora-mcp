@@ -16,6 +16,11 @@ type inputIDIn struct {
 	InputID string `json:"inputId" jsonschema:"Unique input identifier, as returned by listInputs"`
 }
 
+type inputEnabledIn struct {
+	InputID string `json:"inputId" jsonschema:"Unique input identifier, as returned by listInputs"`
+	Enabled bool   `json:"enabled" jsonschema:"true to enable the input, false to disable it"`
+}
+
 // inputList wraps a list of inputs so the structured result is an object.
 type inputList struct {
 	Inputs []hub.Input `json:"inputs" jsonschema:"The inputs the hub returned"`
@@ -47,5 +52,15 @@ func registerInputs(s *mcp.Server, client *http.Client, hubURL string) int {
 			return hub.GetInput(ctx, client, hubURL, in.InputID)
 		})
 
-	return 2
+	add(s, toolSpec{
+		Name: "setInputEnabled",
+		Description: "Enable or disable one audio input; a disabled input is hidden from listInputs by default and cannot be played. Idempotent. " +
+			"Returns the updated input (ID, name, URI, enabled and auto-remove flags, source, creation time, pauseable); fails with NotFound if there is no such input.",
+		Kind: Idempotent, Method: "PUT", Path: "/api/v2/inputs/{inputId}/enabled",
+	}, inputSchema[inputEnabledIn](withMinLength("inputId", 1)),
+		func(ctx context.Context, in inputEnabledIn) (*hub.Input, error) {
+			return hub.SetInputEnabled(ctx, client, hubURL, in.InputID, in.Enabled)
+		})
+
+	return 3
 }

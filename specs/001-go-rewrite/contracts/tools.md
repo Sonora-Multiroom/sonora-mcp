@@ -24,7 +24,7 @@ Conventions: `?` = optional. `TargetType` = `SINGLE_OUTPUT` | `OUTPUT_GROUP`. `V
 | `listOutputs` | `GET /api/v2/outputs` | `includeDisabled?: bool` | read-only | `{"outputs": [Output]}` |
 | `getOutput` | `GET /api/v2/outputs/{outputId}` | `outputId` | read-only | `Output` |
 | `setOutputVolume` | `PUT /api/v2/outputs/{outputId}/volume` | `outputId`, `volume: Volume` | idempotent | `OutputVolume` |
-| `setOutputMute` | `PUT /api/v2/outputs/{outputId}/mute` | `outputId`, `muted: bool` | idempotent | `Output` |
+| `setOutputMute` | `PUT /api/v2/outputs/{outputId}/mute` | `outputId`, `muted: bool` | idempotent | `OutputMute` |
 | `setOutputEnabled` | `PUT /api/v2/outputs/{outputId}/enabled` | `outputId`, `enabled: bool` | idempotent | `Output` |
 
 ## Groups
@@ -34,7 +34,7 @@ Conventions: `?` = optional. `TargetType` = `SINGLE_OUTPUT` | `OUTPUT_GROUP`. `V
 | `listGroups` | `GET /api/v2/groups` | `includeDisabled?: bool` | read-only | `{"groups": [Group]}` |
 | `getGroup` | `GET /api/v2/groups/{groupId}` | `groupId` | read-only | `Group` |
 | `setGroupVolume` | `PUT /api/v2/groups/{groupId}/volume` | `groupId`, `volume: Volume` | idempotent | `GroupVolume` |
-| `setGroupMute` | `PUT /api/v2/groups/{groupId}/mute` | `groupId`, `muted: bool` | idempotent | `Group` |
+| `setGroupMute` | `PUT /api/v2/groups/{groupId}/mute` | `groupId`, `muted: bool` | idempotent | `GroupMute` |
 | `setGroupEnabled` | `PUT /api/v2/groups/{groupId}/enabled` | `groupId`, `enabled: bool` | idempotent | `Group` |
 
 ## Routes
@@ -56,7 +56,7 @@ Conventions: `?` = optional. `TargetType` = `SINGLE_OUTPUT` | `OUTPUT_GROUP`. `V
 | `getMasterMute` | `GET /api/v2/master-mute` | — | read-only | `MasterMute` |
 | `setMasterMute` | `PUT /api/v2/master-mute` | `muted: bool` | idempotent | `MasterMute` |
 
-Resource shapes (`Input`, `Output`, `OutputVolume`, `Group`, `GroupVolume`, `Route`,
+Resource shapes (`Input`, `Output`, `OutputVolume`, `OutputMute`, `Group`, `GroupVolume`, `GroupMute`, `Route`,
 `PlaybackResponse`, `MasterMute`) are the `hub` package types, which carry every field of the
 corresponding spec response schema.
 
