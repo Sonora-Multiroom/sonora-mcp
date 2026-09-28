@@ -519,7 +519,11 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   group tools, master mute, createInput/setInputEnabled/deleteInput, createRoute/getRoute/
   deleteRoute, playback); `setRoutePause` returned `Validation: Pause is not supported for this
   input type` for the non-pauseable stream (correct); `deleteInput` of a static input →
-  `Validation:` (correct). Found T073. Remaining: MCP Inspector and VS Code with `.vscode/mcp.json`
+  `Validation:` (correct). Found T073. Quickstart §5: hub on a closed port → `Network:`, on a
+  non-routable address → `Timeout:` after 5 s. §6: `--host 127.0.0.1` answers on localhost and
+  refuses the LAN address; without `--host` the LAN address answers (and the Pi service answers
+  from another machine). §7 is covered by the shutdown tests and the Pi's systemd restarts.
+  Remaining: MCP Inspector and VS Code with `.vscode/mcp.json` (§4.1, §4.3)
 - [X] T073 Fix in sonora-cli (Principle I), then bump: `hub.TransferRoute` reports every 404 as
   `route not found: <routeId>` and `hub.CreateRoute` every 404 as `target not found`, although the
   spec's 404 means "route or target" / "input or target" and the hub's problem body names the
