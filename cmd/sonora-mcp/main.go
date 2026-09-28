@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/Sonora-Multiroom/sonora-cli/hub"
 	"github.com/Sonora-Multiroom/sonora-mcp/internal/config"
@@ -21,6 +22,11 @@ import (
 	"github.com/Sonora-Multiroom/sonora-mcp/internal/version"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
+
+// readHeaderTimeout bounds how long a client may take to send request
+// headers, so slow or stalled connections cannot pile up. It does not limit
+// the body or the response, so long tool calls are unaffected.
+const readHeaderTimeout = 10 * time.Second
 
 func main() {
 	os.Exit(run(context.Background(), os.Args[1:], os.Stdout, os.Stderr))
@@ -76,8 +82,9 @@ func newApp(cfg config.Config, logger *slog.Logger) *app {
 	s.AddReceivingMiddleware(tools.LogToolCalls(logger))
 
 	srv := &http.Server{
-		Addr:    cfg.ListenAddr(),
-		Handler: server.Handler(s, client, cfg.HubURL),
+		Addr:              cfg.ListenAddr(),
+		Handler:           server.Handler(s, client, cfg.HubURL),
+		ReadHeaderTimeout: readHeaderTimeout,
 		BaseContext: func(ln net.Listener) context.Context {
 			logger.Info("sonora-mcp started",
 				"version", version.Version,

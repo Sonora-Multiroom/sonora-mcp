@@ -106,6 +106,9 @@ func TestNewAppUsesOneVersionAndBoundedClient(t *testing.T) {
 	if a.client.Timeout <= 0 || a.client.Timeout > 5*time.Second {
 		t.Errorf("hub client timeout = %v, want 0 < t <= 5s", a.client.Timeout)
 	}
+	if a.server.ReadHeaderTimeout <= 0 {
+		t.Error("server has no ReadHeaderTimeout; slow clients could hold connections open")
+	}
 	if a.tools != 24 {
 		t.Errorf("tools registered = %d, want 24", a.tools)
 	}
