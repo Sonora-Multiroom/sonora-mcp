@@ -470,7 +470,7 @@ an assistant with the existing config, request `/health` (spec US5, quickstart ย
   names equal exactly the 24 names in contracts/tools.md (no more, no fewer)
 - [X] T063 [US6] Drift check (manual, not committed): set `setOutputVolume`'s maximum to 150, confirm
   `go test ./internal/tools/` fails naming `setOutputVolume`, `volume`, `maximum`, 150 vs 100; revert
-- [ ] T064 [US6] Delete Node.js sources and tooling. First run `git status --short`: tracked Node
+- [X] T064 [US6] Delete Node.js sources and tooling. First run `git status --short`: tracked Node
   files must have no local changes, or `git rm` refuses them. The known case is an uncommitted,
   never-shipped `openapi:update` script in `package.json` and its "Updating the API Spec" section
   in `README.md` (constitution: legacy freeze); discard both with
@@ -483,9 +483,9 @@ an assistant with the existing config, request `/health` (spec US5, quickstart ย
   `go run`/`go build`), `dist/` and `node_modules/` from disk with plain `rm`; confirm with the
   quickstart ยง9 `git ls-files` check and that `scripts/update-openapi.mjs`, `run.sh` and `run.dev.sh`
   no longer exist
-- [ ] T066 [P] [US6] Remove Node rules from `.gitignore` (`node_modules/`, `*.js`, `*.d.ts`,
+- [X] T066 [P] [US6] Remove Node rules from `.gitignore` (`node_modules/`, `*.js`, `*.d.ts`,
   `*.d.ts.map`, `*.js.map`, `!.gitignore` block) keeping Go and Spec Kit rules
-- [ ] T067 [US6] Rewrite `README.md` for Go: architecture diagram (unchanged), build with version
+- [X] T067 [US6] Rewrite `README.md` for Go: architecture diagram (unchanged), build with version
   ldflags, cross-build for linux/arm64, run with `--multiroom-url/--port/--host`, `/health` example
   with `hub`, client configs (VS Code, Claude Desktop โ€” unchanged URLs), the 24-tool list, error
   categories, Pi install via `deploy/pi/install.sh` as one command (`curl -fsSL
