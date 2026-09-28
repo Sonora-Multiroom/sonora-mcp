@@ -445,9 +445,15 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   `install.sh` unchanged; confirm `curl -fsSL -o /dev/null -w '%{http_code}'
   https://github.com/Sonora-Multiroom/sonora-mcp/releases/download/v1.1.0-rc.1/sonora-mcp_1.1.0-rc.1_linux_arm64.tar.gz`
   returns `200`
-- [ ] T061 [US5] Validate on the Pi per quickstart.md §8 with `--version v1.1.0-rc.1` (install,
+- [X] T061 [US5] Validate on the Pi per quickstart.md §8 with `--version v1.1.0-rc.1` (install,
   `/health`, re-run with another port, kill → restart, reboot → running); time the install (SC-008:
   ≤ 5 min) and the restart after kill and after reboot (≤ 1 min); note results in the PR description
+  — **Result (2026-09-28, Raspberry Pi, v1.1.0-rc.1, installed with the one-command `curl … |
+  sudo bash -s --` form from the branch)**: install completed in seconds (SC-008 ≤ 5 min ✓);
+  `/health` answered `1.1.0-rc.1`, hub reachable; re-run with `--port 3002` reconfigured the
+  single unit; `systemctl kill -s KILL` → restarted by systemd (`NRestarts=1`, `RestartSec=2`) ✓;
+  after reboot the service was active 18.3 s after boot ✓. Right after boot `/health` reported
+  `hub: unreachable` for a few seconds until the hub came up, then `reachable` (no restart needed)
 
 **Checkpoint**: operator stories verified locally and on the Pi.
 
