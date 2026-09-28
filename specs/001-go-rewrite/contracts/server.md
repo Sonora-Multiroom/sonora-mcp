@@ -77,14 +77,24 @@ prereleases (`<tag>-rc.N`, tagged on the feature branch) and installed with `--v
 
 ### `install.sh`
 
-The only file copied to the Pi. The systemd unit is embedded as a heredoc; the built
+The only file the Pi needs. The systemd unit is embedded as a heredoc; the built
 `linux/arm64` binary is **not** embedded — the script downloads it from the GitHub Release whose
 tag is baked in as `RELEASE_TAG` (see Build above). The repository is public, so no credentials
-are needed. Run on the Pi with sudo, from wherever it was copied to:
+are needed. Install in one command, piping the script from `main` (whose `RELEASE_TAG` is the
+latest release):
+
+```
+curl -fsSL https://raw.githubusercontent.com/Sonora-Multiroom/sonora-mcp/main/deploy/pi/install.sh | sudo bash -s -- --hub-url <url> [--port <port>] [--host <address>] [--version <tag>]
+```
+
+or run a copy on the Pi with sudo:
 
 ```
 sudo ./install.sh --hub-url <url> [--port <port>] [--host <address>] [--version <tag>]
 ```
+
+The script body runs from a `main` function called on its last line, so a download cut off part
+way through executes nothing.
 
 | Effect | Detail |
 |---|---|

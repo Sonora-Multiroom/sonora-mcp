@@ -482,7 +482,9 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
 - [ ] T067 [US6] Rewrite `README.md` for Go: architecture diagram (unchanged), build with version
   ldflags, cross-build for linux/arm64, run with `--multiroom-url/--port/--host`, `/health` example
   with `hub`, client configs (VS Code, Claude Desktop — unchanged URLs), the 24-tool list, error
-  categories, Pi install via `deploy/pi/install.sh`, tech stack (Go 1.27, MCP Go SDK v1.8.0,
+  categories, Pi install via `deploy/pi/install.sh` as one command (`curl -fsSL
+  https://raw.githubusercontent.com/Sonora-Multiroom/sonora-mcp/main/deploy/pi/install.sh | sudo bash -s -- --hub-url <url>`, plus the options and the copy-and-run
+  alternative), tech stack (Go 1.27, MCP Go SDK v1.8.0,
   sonora-cli `hub`); remove all `npm` and `openapi.json` sections
 
 **Checkpoint**: repository is Go-only; `git ls-files` check in quickstart §9 is empty.

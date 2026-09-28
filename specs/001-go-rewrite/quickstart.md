@@ -112,7 +112,8 @@ verifies it against the release's `checksums.txt`, so the Pi needs
 outbound internet access to `github.com` during install (not afterward). Before merge, validate
 the prerelease with `--version v1.1.0-rc.1`; final releases are cut from `main` only (T072).
 
-On the Pi:
+On the Pi (either the copied script, or the one-command form from `main` once merged:
+`curl -fsSL https://raw.githubusercontent.com/Sonora-Multiroom/sonora-mcp/main/deploy/pi/install.sh | sudo bash -s -- --hub-url http://localhost:8080`):
 
 ```bash
 sudo ~/install.sh --hub-url http://localhost:8080 --version v1.1.0-rc.1
