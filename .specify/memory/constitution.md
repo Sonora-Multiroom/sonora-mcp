@@ -1,34 +1,22 @@
 <!--
 Sync Impact Report
 ==================
-Version change: 1.0.0 (Node.js draft, never committed) → 1.0.0 (Go, re-ratified 2026-09-27)
-Why not 2.0.0: the Node.js draft was never committed or used to govern a feature, so this is
-  treated as the first adopted version (per docs/future/go-rewrite-shared-hub-client.md §3.1).
-Modified principles (intent carried over, obligations rewritten for Go):
-  - I. API Contract Fidelity (OpenAPI-Driven) → I. API Contract Fidelity via the Shared Hub
-    Client: all hub calls go through sonora-cli's public `hub` package; conformance is checked
-    against `api.Spec`; the local `openapi.json` copy and `npm run openapi:update` are retired.
-  - II. Agent-Oriented Tool Design: Zod schemas → Go input structs with JSON Schema tags;
-    otherwise unchanged.
-  - III. Thin, Stateless Proxy: unchanged in intent.
-  - IV. Resilient, Transparent Error Handling: timeouts come from `hub.NewClient`; errors are
-    translated through `hub.ClassifyError`.
-  - V. Test-First Development (NON-NEGOTIABLE): scope narrowed to the MCP layer; hub
-    contract tests live in sonora-cli (its Principle VII).
-  - VI. Minimal Dependencies & Simplicity: Node built-ins → Go standard library; sanctioned
-    dependencies are the MCP Go SDK and the sonora-cli module.
-Added sections: none new versus the draft; "Technology & Operational Constraints" rewritten
-  for Go (toolchain, dependency pinning, go.work rule, cross-compilation, legacy Node freeze).
+Version change: 1.0.0 → 1.0.1 (PATCH)
+Why PATCH: the obligation is unchanged. The schema must still carry the spec's constraints, and
+  invalid input must still be rejected with a tool error before any hub request. The amendment
+  only corrects how the constraints get into the schema: google/jsonschema-go (the MCP Go SDK's
+  schema library) accepts only a description in the `jsonschema` struct tag, so ranges, enums,
+  lengths and patterns cannot be expressed as tags.
+Modified principles:
+  - II. Agent-Oriented Tool Design: "JSON Schema (via struct tags) carries the spec's
+    constraints" → descriptions via struct tags; other constraints set on the derived schema at
+    registration.
+Added sections: none.
 Removed sections: none.
-Aligned with: sonora-cli constitution 1.2.0 (Principle II hub-package bullet, Principle VII
-  Public Hub Client Package).
+Trigger: /speckit-analyze finding C1 on feature 001-go-rewrite (research.md R3 sets constraints
+  in code; plan.md's Constitution Check marked Principle II "Pass" without recording it).
+Follow-up: plan.md Constitution Check row II can cite constitution 1.0.1; no template changes.
 Deferred / TODO items: none.
-Known gaps between the repository and this constitution (resolved by feature 001-go-rewrite):
-  - The server is still the Node.js implementation (src/, package.json, openapi.json,
-    scripts/update-openapi.mjs); it is frozen by the "Legacy Node.js implementation" rule.
-  - No go.mod exists yet; sonora-cli's public `hub/` is on PR #19 (branch
-    010-public-hub-package), not yet tagged.
-Templates requiring follow-up: none. plan/spec/tasks templates read this file at runtime.
 -->
 
 # Sonora MCP Constitution
@@ -68,8 +56,10 @@ The consumers of this server are LLM agents, so tool surface quality is a correc
 - Every tool MUST have a description stating what it does, its side effects, and what it
   returns, in terms an agent can act on without reading the hub's source. Every input field
   MUST carry a description.
-- Tool inputs MUST be defined as Go structs whose JSON Schema (via struct tags) carries the
-  spec's constraints. Input that fails the schema MUST produce a tool error and no hub request.
+- Tool inputs MUST be defined as Go structs, and the JSON Schema derived from them MUST carry
+  the spec's constraints: field descriptions via struct tags, and constraints the tags cannot
+  express (ranges, enums, lengths, patterns) set on the derived schema when the tool is
+  registered. Input that fails the schema MUST produce a tool error and no hub request.
 - Tools that change state MUST be distinguishable from read-only ones through MCP tool
   annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`).
 - Renaming or removing a tool, or changing its input schema incompatibly, is a breaking change
@@ -219,4 +209,4 @@ before merge. A violation MUST either be fixed or be justified explicitly (in th
 Complexity Tracking or the change description); a recurring justified violation signals that
 this constitution needs amending.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-27 | **Last Amended**: 2026-09-27
+**Version**: 1.0.1 | **Ratified**: 2026-09-27 | **Last Amended**: 2026-09-28
