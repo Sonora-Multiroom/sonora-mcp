@@ -15,6 +15,14 @@ type masterMuteIn struct {
 	Muted bool `json:"muted" jsonschema:"true to silence every output at once, false to lift the master mute"`
 }
 
+type playbackIn struct {
+	URI         string  `json:"uri" jsonschema:"Stream or file URI to play, e.g. an http(s) URL"`
+	TargetID    string  `json:"targetId" jsonschema:"ID of the output or group to play to"`
+	TargetType  string  `json:"targetType" jsonschema:"SINGLE_OUTPUT if targetId is an output, OUTPUT_GROUP if it is a group"`
+	DisplayName *string `json:"displayName,omitempty" jsonschema:"Name for the temporary input the hub creates; the hub chooses one when omitted"`
+	Volume      *int    `json:"volume,omitempty" jsonschema:"Volume to set on the target before playing, an integer from 0 to 100; unchanged when omitted"`
+}
+
 func registerPlayback(s *mcp.Server, client *http.Client, hubURL string) int {
 	add(s, toolSpec{
 		Name: "getMasterMute",
@@ -36,5 +44,20 @@ func registerPlayback(s *mcp.Server, client *http.Client, hubURL string) int {
 			return hub.SetMasterMute(ctx, client, hubURL, in.Muted)
 		})
 
-	return 2
+	add(s, toolSpec{
+		Name: "playback",
+		Description: "Play a URI on an output or group in one step: the hub creates a temporary input and a route to the target. Changes state: calling it again starts another playback. " +
+			"Returns {\"inputId\", \"route\", \"message\"} with the created input's ID and the new route; " +
+			"fails with NotFound if the target does not exist and SourceUnreachable if the hub cannot open the URI.",
+		Kind: StateChanging, Method: "POST", Path: "/api/v2/play",
+	}, inputSchema[playbackIn](withMinLength("uri", 1), withMinLength("targetId", 1),
+		withEnum("targetType", targetTypes...), withRange("volume", 0, 100)),
+		func(ctx context.Context, in playbackIn) (*hub.PlaybackResponse, error) {
+			return hub.Playback(ctx, client, hubURL, hub.PlaybackRequest{
+				URI: in.URI, TargetID: in.TargetID, TargetType: in.TargetType,
+				DisplayName: in.DisplayName, Volume: in.Volume,
+			})
+		})
+
+	return 3
 }
