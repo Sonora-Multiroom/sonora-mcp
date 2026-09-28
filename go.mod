@@ -3,6 +3,17 @@ module github.com/tiger-seo/sonora-mcp
 go 1.27.0
 
 require (
-	github.com/Sonora-Multiroom/sonora-cli v0.0.18-0.20260927223403-3ee73698f2ae // indirect
-	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
+	github.com/Sonora-Multiroom/sonora-cli v0.0.18-0.20260927223403-3ee73698f2ae
+	github.com/google/jsonschema-go v0.4.3
+	github.com/modelcontextprotocol/go-sdk v1.8.0
+)
+
+require (
+	github.com/segmentio/asm v1.1.3 // indirect
+	github.com/segmentio/encoding v0.5.4 // indirect
+	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
+	golang.org/x/oauth2 v0.35.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
 )
