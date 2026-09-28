@@ -1,44 +1,11 @@
-# Feature Specification: Rewrite sonora-mcp on the Shared Hub Client
+# Main Project Specification
 
-**Feature Branch**: `001-go-rewrite`
+> **Revision**: 2026-09-28 — Bootstrapped and populated by archiving `specs/001-go-rewrite` (the Go
+> rewrite on sonora-cli's shared `hub` client, released as v1.1.0).
 
-**Created**: 2026-09-27
+## User Scenarios & Testing
 
-**Status**: Draft
-
-**Input**: User description: "@docs/future/go-rewrite-shared-hub-client.md" — phase 3.2 of that plan:
-replace the Node.js/TypeScript MCP server with a Go implementation built on sonora-cli's public
-`hub` package, keeping the same tools, flags and endpoints, then remove the Node.js code.
-
-## Clarifications
-
-### Session 2026-09-27
-
-- Q: Which network addresses should the server accept connections on by default? → A: All
-  addresses by default (as today), plus an optional `--host` flag to restrict it (e.g.
-  `--host 127.0.0.1`).
-- Q: Should tool results give agents the hub data only as JSON text, as today, or also as
-  structured data with a declared format? → A: Both: JSON text plus structured data with a
-  declared format; errors carry the category in the message and in a structured field
-  (structured field later dropped, see the planning revisit below).
-- Q: Should `/health` report only that the MCP server is running, as today, or also whether the
-  hub can be reached? → A: Always 200 with status, server and version, plus a `hub` field
-  (`reachable`/`unreachable`) from one quick, time-limited hub request.
-- Q: Should this feature also set the server up to run on the Pi as a background service that
-  starts at boot and restarts after a crash, or only deliver the executable? → A: Executable,
-  clean shutdown on a stop signal, a service definition, and an install script that sets up and
-  enables the service on the Pi.
-- Q: Should the install script run on the Pi itself after you copy the files there, or on your
-  Windows machine and deploy to the Pi over SSH? → A: On the Pi: copy the install script over,
-  then run it there with the hub URL; it downloads the matching pre-built executable from the
-  project's GitHub Releases itself (the service definition is embedded in the script).
-- Q: (revisited during planning, 2026-09-28) Must the error category also be in a structured field,
-  given the SDK's simple tool API can't attach one? → A: No, the text prefix is enough for now;
-  revisit with the SDK's low-level API if a client needs a structured field.
-
-## User Scenarios & Testing *(mandatory)*
-
-Actors:
+Actors: [Source: specs/001-go-rewrite/spec.md -> "Actors"]
 
 - **Agent**: an AI assistant (VS Code Copilot, Claude, MCP Inspector) connected to the server,
   choosing and calling tools.
@@ -47,6 +14,8 @@ Actors:
 - **Maintainer**: the person who changes the server when the hub API evolves.
 
 ### User Story 1 - Agents discover and inspect the audio system unchanged (Priority: P1)
+
+[Source: specs/001-go-rewrite/spec.md -> User Story 1]
 
 An agent that was connected to the old server connects to the new one at the same address and
 sees the same 24 tools under the same names. It lists and fetches inputs, outputs, groups,
@@ -76,6 +45,8 @@ list/get tool.
 
 ### User Story 2 - Agents control volume, mute and availability (Priority: P1)
 
+[Source: specs/001-go-rewrite/spec.md -> User Story 2]
+
 An agent changes the volume of an output or group, mutes or unmutes outputs, groups or the whole
 system, and enables or disables inputs, outputs and groups, exactly as with the old server.
 
@@ -101,6 +72,8 @@ hub receives the matching request and the tool returns the hub's resulting state
 ---
 
 ### User Story 3 - Agents route and play audio (Priority: P1)
+
+[Source: specs/001-go-rewrite/spec.md -> User Story 3]
 
 An agent plays a URI on an output or group, creates routes from inputs to targets, transfers,
 pauses, resumes and deletes routes, and creates or deletes ephemeral inputs.
@@ -130,6 +103,8 @@ delete a route, and create → delete an input; verify each hub request and each
 
 ### User Story 4 - Agents get actionable errors (Priority: P2)
 
+[Source: specs/001-go-rewrite/spec.md -> User Story 4]
+
 When something goes wrong (the hub is down, slow, rejects the request, or the ID doesn't exist),
 the agent receives an error result that says what happened and what kind of failure it was,
 and the server keeps serving other requests.
@@ -157,6 +132,8 @@ concurrent call to a healthy endpoint still succeeds.
 ---
 
 ### User Story 5 - Operator runs it anywhere with the same setup (Priority: P2)
+
+[Source: specs/001-go-rewrite/spec.md -> User Story 5]
 
 The operator starts the server with the same flags as before, points assistants at the same
 URL, and checks health the same way, on Windows or on the Raspberry Pi, from a single
@@ -198,6 +175,8 @@ and request `/health`.
 
 ### User Story 6 - Maintainer has one client and no Node.js left (Priority: P3)
 
+[Source: specs/001-go-rewrite/spec.md -> User Story 6]
+
 The maintainer finds a single implementation: no Node.js sources, build files or local copy of
 the hub spec remain, the README describes only the new build, and an automated test catches any
 tool that drifts from the hub spec shipped with the shared client.
@@ -222,22 +201,27 @@ locally and confirm the conformance test fails.
 
 - An ID containing characters that need escaping in a URL path (spaces, `/`, `#`) is passed to
   a get/set tool: the hub receives the ID intact, not a different path.
+  [Source: specs/001-go-rewrite/spec.md -> "An ID containing characters that need escaping"]
 - `listRoutes` is called with none, some, or all of its optional filters (`status`,
   `inputId`, `targetId`): only the given filters are sent.
+  [Source: specs/001-go-rewrite/spec.md -> "`listRoutes` is called with none, some, or all"]
 - `deleteInput` targets a static (configured) input: the hub's rejection comes back as a
   validation error, not a generic failure.
+  [Source: specs/001-go-rewrite/spec.md -> "`deleteInput` targets a static (configured) input"]
 - `playback` is called with a URI the hub cannot reach: the error says the audio source could
-  not be reached.
+  not be reached. [Source: specs/001-go-rewrite/spec.md -> "`playback` is called with a URI the hub cannot reach"]
 - Optional fields (`createInput.enabled`, `createInput.autoRemove`, `playback.displayName`,
   `playback.volume`) are omitted: the hub receives no value for them and applies its defaults,
-  rather than receiving `false` or `0`.
+  rather than receiving `false` or `0`. [Source: specs/001-go-rewrite/spec.md -> "Optional fields"]
 - The hub returns a body that cannot be read as the expected data (not JSON, wrong shape):
   the tool returns a malformed-response error rather than partial or invented data.
+  [Source: specs/001-go-rewrite/spec.md -> "The hub returns a body that cannot be read"]
 - A handler fails unexpectedly: that call returns an error result; the server and other calls
-  continue.
+  continue. [Source: specs/001-go-rewrite/spec.md -> "A handler fails unexpectedly"]
 - Several agents call tools at the same time: each call is independent (no shared session).
+  [Source: specs/001-go-rewrite/spec.md -> "Several agents call tools at the same time"]
 
-## Requirements *(mandatory)*
+## Requirements
 
 ### Functional Requirements
 
@@ -245,28 +229,35 @@ locally and confirm the conformance test fails.
 
 - **FR-001**: The server MUST expose exactly the 24 tools in the Tool Inventory, with the same
   names and the same input fields (names, types, required/optional) as the current server.
+  [Source: specs/001-go-rewrite/spec.md -> FR-001]
 - **FR-002**: Each tool's input constraints (required fields, enumerations such as target type,
   ranges such as volume 0–100) MUST match the hub API specification, and input that violates
   them MUST be rejected with an input error before any hub request is made.
+  [Source: specs/001-go-rewrite/spec.md -> FR-002]
 - **FR-003**: Every tool MUST have a description stating what it does, its side effects and
   what it returns; every input field MUST have a description.
+  [Source: specs/001-go-rewrite/spec.md -> FR-003]
 - **FR-004**: Every tool MUST be marked read-only or state-changing; state-changing tools MUST
   additionally be marked idempotent or destructive where that applies (see Tool Inventory).
+  [Source: specs/001-go-rewrite/spec.md -> FR-004]
 - **FR-005**: A successful tool result MUST contain the hub's response data for that operation
   with every field the hub API specification defines for it. Operations for which the hub
   returns no body MUST return an explicit success confirmation.
+  [Source: specs/001-go-rewrite/spec.md -> FR-005]
 - **FR-005a**: Every successful result MUST carry the data twice: as JSON text (so clients that
   read only text keep working) and as structured data. Each tool MUST declare the format of its
   structured data, and the structured data MUST conform to it.
+  [Source: specs/001-go-rewrite/spec.md -> FR-005a]
 
 **Hub interaction**
 
 - **FR-006**: Every hub interaction MUST use the shared hub client maintained in sonora-cli; the
-  server MUST NOT call hub endpoints any other way.
+  server MUST NOT call hub endpoints any other way. [Source: specs/001-go-rewrite/spec.md -> FR-006]
 - **FR-007**: Every hub call MUST be bounded by a time limit and MUST be abandoned when the
-  agent's request is cancelled.
+  agent's request is cancelled. [Source: specs/001-go-rewrite/spec.md -> FR-007]
 - **FR-008**: The server MUST hold no hub state between calls and MUST keep no per-client
   session; each tool call reflects the hub's state at that moment.
+  [Source: specs/001-go-rewrite/spec.md -> FR-008]
 
 **Errors & logging**
 
@@ -274,13 +265,13 @@ locally and confirm the conformance test fails.
   a human-readable message and a stable error category name (at least: not found, validation,
   network/timeout, hub error, service unavailable, source unreachable, malformed response).
   The category MUST appear at the start of the message text (e.g.
-  `NotFound: output garage not found`).
+  `NotFound: output garage not found`). [Source: specs/001-go-rewrite/spec.md -> FR-009]
 - **FR-010**: Where the hub supplies problem details, the error message MUST include the hub's
-  explanation.
+  explanation. [Source: specs/001-go-rewrite/spec.md -> FR-010]
 - **FR-011**: A failure or unexpected fault in one tool call MUST NOT stop the server or affect
-  other calls.
+  other calls. [Source: specs/001-go-rewrite/spec.md -> FR-011]
 - **FR-012**: Each tool call MUST be logged with tool name, arguments, outcome (success or error
-  category) and duration.
+  category) and duration. [Source: specs/001-go-rewrite/spec.md -> FR-012]
 
 **Operation**
 
@@ -288,25 +279,30 @@ locally and confirm the conformance test fails.
   (default 3001) and `-h`/`--help`, with the same meaning as today; `--help` MUST exit with
   status 0, and a missing or invalid flag value MUST stop startup with usage text and exit status
   2 (Go's usage-error convention; the old server exited with 1, which no known client or service
-  definition depends on).
+  definition depends on). [Source: specs/001-go-rewrite/spec.md -> FR-013]
 - **FR-013a**: The server MUST accept connections on all network addresses by default (as
   today), and MUST accept an optional `--host <address>` flag that restricts the listening
   address (e.g. `127.0.0.1` for local-only use). An invalid address MUST stop startup with
   usage text and exit status 2 (as for any invalid flag value, FR-013).
+  [Source: specs/001-go-rewrite/spec.md -> FR-013a]
 - **FR-014**: The server MUST serve the MCP protocol over streamable HTTP at `/mcp`, without
   sessions, so existing client configurations work unchanged.
+  [Source: specs/001-go-rewrite/spec.md -> FR-014]
 - **FR-015**: The server MUST serve `GET /health` returning status, server name, version and a
   `hub` field (`reachable` or `unreachable`) determined by one time-limited, read-only hub
   request per health check. The response MUST be successful (200) whenever the server itself is
-  running, regardless of the hub's state.
+  running, regardless of the hub's state. [Source: specs/001-go-rewrite/spec.md -> FR-015]
 - **FR-016**: The version MUST be set once per build and reported identically by `/health`, the
-  MCP server information and the startup log.
+  MCP server information and the startup log. [Source: specs/001-go-rewrite/spec.md -> FR-016]
 - **FR-017**: The server MUST build as a single self-contained executable for Windows and for
   64-bit ARM Linux, requiring no separately installed language runtime.
+  [Source: specs/001-go-rewrite/spec.md -> FR-017]
 - **FR-017a**: On a stop signal (interrupt or terminate), the server MUST stop accepting new
   connections, let in-flight calls finish within the hub time limit, and exit with status 0.
+  [Source: specs/001-go-rewrite/spec.md -> FR-017a]
 - **FR-017b**: The repository MUST provide a service definition for Linux (the Pi) that starts
   the server at boot with the configured hub URL, port and host, and restarts it after a crash.
+  [Source: specs/001-go-rewrite/spec.md -> FR-017b]
 - **FR-017c**: The repository MUST provide a single install script — embedding the service
   definition and a pinned release version — that is copied to the Pi as the only file and run
   there. It takes the hub URL (and optionally port, host and a version override) as input,
@@ -314,19 +310,24 @@ locally and confirm the conformance test fails.
   executable and the service definition, enables and starts the service, and is safe to re-run
   to upgrade or reconfigure. It MUST NOT be required for building or for running on Windows.
   Remote deployment from the development machine is out of scope.
+  [Source: specs/001-go-rewrite/spec.md -> FR-017c]
 
 **Maintenance**
 
 - **FR-018**: An automated test MUST verify every tool against the hub API specification shipped
   with the shared client version in use, and fail with the tool name and mismatch on drift.
+  [Source: specs/001-go-rewrite/spec.md -> FR-018]
 - **FR-019**: The automated test suite MUST run without a real hub or network access, on Windows
   and Linux, and MUST cover the core flows (playback; route create, transfer, pause, delete;
-  volume and mute) and error translation.
+  volume and mute) and error translation. [Source: specs/001-go-rewrite/spec.md -> FR-019]
 - **FR-020**: All Node.js sources, build configuration, dependency manifests, the local hub
   specification copy and its update script MUST be removed; README MUST document only the new
   build, cross-build for the Pi, service installation, run and client-configuration steps.
+  [Source: specs/001-go-rewrite/spec.md -> FR-020]
 
 ### Tool Inventory
+
+[Source: specs/001-go-rewrite/spec.md -> "Tool Inventory"]
 
 The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE_OUTPUT` or
 `OUTPUT_GROUP`; volume is an integer 0–100.
@@ -360,71 +361,142 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
 
 ### Key Entities
 
-- **Tool**: a named action an agent can call; has a description, an input schema with
-  constraints, a kind (read-only / state-changing / idempotent / destructive) and maps to one hub operation.
+- **Tool** (ToolDefinition, built at startup, immutable): a named action an agent can call; has a
+  description, an input schema with constraints, a kind (read-only / state-changing / idempotent /
+  destructive) and maps to one hub operation. Fields: `Name` (unique, exactly the 24 inventory
+  names, camelCase, no `_1` suffixes); `Description` (non-empty; every input field also described);
+  `Operation` (HTTP method + spec path, must exist in `api.Spec`); `Kind`; `InputSchema` (inferred
+  from the input struct plus applied constraints, equal to the spec's); `OutputSchema` (inferred
+  from the result type, always type `object`); `Handler` (calls exactly one `hub` function with the
+  request context; no direct HTTP; no state kept). Kind maps to annotations: read-only →
+  `readOnlyHint: true`; idempotent → `readOnlyHint: false`, `destructiveHint: false`,
+  `idempotentHint: true`; state-changing → all three false; destructive → `readOnlyHint: false`,
+  `destructiveHint: true`, `idempotentHint: false`.
+  [Source: specs/001-go-rewrite/spec.md -> "Tool"] [Source: specs/001-go-rewrite/data-model.md -> "ToolDefinition"]
+- **Tool input** (per call): the arguments object, validated against `InputSchema` before the
+  handler runs. Path IDs (`inputId`, `outputId`, `groupId`, `routeId` where they fill a URL path
+  segment) are `minLength: 1` and path-escaped by `hub`; body IDs (`createRoute.inputId`,
+  `targetId` in `createRoute`/`transferRoute`/`playback`) are `minLength: 1`, and
+  `createInput.inputId` also matches `^[a-zA-Z0-9\-_]{1,255}$`; the `listRoutes` filters
+  `inputId`/`targetId` are optional with no `minLength`. `uri` and `createInput.displayName` are
+  `minLength: 1`; `playback.displayName` is optional with no `minLength`. `volume` is an integer
+  0–100 (required for set-volume tools, optional for `playback`); `targetType` is `SINGLE_OUTPUT` |
+  `OUTPUT_GROUP`; `status` (`listRoutes`) is `STARTING` | `ACTIVE` | `STOPPING` | `STOPPED` |
+  `FAILED`, optional. Optional booleans are omitted from the hub request when absent. Validation
+  failure → error result with the SDK's `validating "arguments": ...` text (logged as
+  `InvalidInput`); no hub request. [Source: specs/001-go-rewrite/data-model.md -> "ToolInput"]
 - **Hub resource**: input, output, group, route, master mute, playback result; the data a tool
-  returns, as defined by the hub API specification.
-- **Tool result**: the hub data for one call, delivered as JSON text and as structured data
-  in the tool's declared format.
-- **Error result**: message prefixed with the error category, returned to the agent instead of
-  data.
-- **Build version**: one identifier per build, reported by health, server info and logs.
+  returns, as defined by the hub API specification. Shapes are owned by sonora-cli's `hub` package
+  and the hub spec, referenced here, not redefined.
+  [Source: specs/001-go-rewrite/spec.md -> "Hub resource"] [Source: specs/001-go-rewrite/data-model.md -> "Hub resource shapes are owned by sonora-cli's `hub` package"]
+- **Tool result** (per call, success): the hub data for one call, delivered as JSON text and as
+  structured data in the tool's declared format. `structuredContent` is an object: single
+  resources as returned by `hub`; lists wrapped (`{"inputs": [...]}`, `{"outputs": [...]}`,
+  `{"groups": [...]}`, `{"routes": [...]}`); deletes return
+  `{"deleted": true, "inputId"/"routeId": "<id>"}`. `content` is one text block with the same JSON.
+  Every field the spec defines for the resource is present.
+  [Source: specs/001-go-rewrite/spec.md -> "Tool result"] [Source: specs/001-go-rewrite/data-model.md -> "ToolResult"]
+- **Error result** (per call, failure): message prefixed with the error category, returned to the
+  agent instead of data: `isError: true` and one text block `"<Category>: <message>"`. Category is a
+  closed set: `NotFound`, `Validation`, `RouteFailed`, `SourceUnreachable`, `ServiceUnavailable`,
+  `Network`, `Timeout`, `MalformedResponse`, `HubError`, `Internal` (`InvalidInput` appears only in
+  logs). [Source: specs/001-go-rewrite/spec.md -> "Error result"] [Source: specs/001-go-rewrite/data-model.md -> "ErrorResult"]
+- **Build version**: one identifier per build (default `dev`), reported by health, server info and
+  logs. [Source: specs/001-go-rewrite/spec.md -> "Build version"] [Source: specs/001-go-rewrite/data-model.md -> "BuildVersion"]
+- **HealthStatus** (per `/health` request): `status` `"ok"` (always, while the process serves
+  requests); `server` `"sonora-mcp"`; `version` = build version; `hub` `"reachable"` if
+  `GetMasterMute` succeeds within 2 s, else `"unreachable"`.
+  [Source: specs/001-go-rewrite/data-model.md -> "HealthStatus"]
+- **ServerConfig** (startup): `HubURL` from `--multiroom-url` (required; `http`/`https` URL with
+  host); `Port` from `--port` (default 3001; 1–65535); `Host` from `--host` (default empty = all
+  addresses; IP literal or `localhost`). Invalid config → usage on stderr, exit 2; `--help` →
+  usage, exit 0. [Source: specs/001-go-rewrite/data-model.md -> "ServerConfig"]
+- **CallLogEntry** (per call): `tool`, `args` (JSON), `outcome` (`ok` or category), `duration`.
+  Emitted once per call, including input-validation failures and panics.
+  [Source: specs/001-go-rewrite/data-model.md -> "CallLogEntry"]
 
-## Success Criteria *(mandatory)*
+### Server Lifecycle
+
+[Source: specs/001-go-rewrite/data-model.md -> "Lifecycle"]
+
+```
+start → parse config ─invalid→ exit 2
+          │
+          ▼
+       register 24 tools → listen ─bind error→ exit 1
+          │
+          ▼
+       serving ──SIGINT/SIGTERM──▶ draining (no new conns; in-flight ≤ 6 s) ──▶ exit 0
+```
+
+## Success Criteria
 
 ### Measurable Outcomes
 
 - **SC-001**: An assistant configured for the old server connects to the new one with zero
   configuration changes and lists exactly the same 24 tool names.
+  [Source: specs/001-go-rewrite/spec.md -> SC-001]
 - **SC-002**: All 24 tools, exercised against a real hub (list, get, volume/mute, enable, route
   create/transfer/pause/delete, playback, master mute), return results containing the same
-  information as the old server for the same calls.
+  information as the old server for the same calls. [Source: specs/001-go-rewrite/spec.md -> SC-002]
 - **SC-003**: With the hub unresponsive, every tool returns an error within 10 seconds; none
-  hang.
+  hang. [Source: specs/001-go-rewrite/spec.md -> SC-003]
 - **SC-004**: 100% of failed hub calls return an error whose text starts with a category name
   (e.g. `NotFound:`, `Validation:`, `Network:`), and input rejected by a tool's schema returns
   the MCP SDK's validation error (`validating "arguments": …`) with no hub request; an agent
   can distinguish "not found", "bad input" and "hub unreachable" from the first token of the
-  error text.
+  error text. [Source: specs/001-go-rewrite/spec.md -> SC-004]
 - **SC-005**: The Pi deployment needs one file copied and no runtime installed; the server
   starts and, with the hub up, answers `/health` with `hub: reachable` within 2 seconds.
+  [Source: specs/001-go-rewrite/spec.md -> SC-005]
 - **SC-006**: The automated test suite passes with the network disabled, and introducing a
-  deliberate tool/spec mismatch makes it fail.
+  deliberate tool/spec mismatch makes it fail. [Source: specs/001-go-rewrite/spec.md -> SC-006]
 - **SC-007**: Zero Node.js files remain in the repository after the feature is merged.
+  [Source: specs/001-go-rewrite/spec.md -> SC-007]
 - **SC-008**: On a fresh Pi with internet access, the server is running as a service within 5
   minutes of copying the install script to it, and is running again within 1 minute of a reboot
-  or a crash.
+  or a crash. [Source: specs/001-go-rewrite/spec.md -> SC-008]
 
 ## Assumptions
 
-- The implementation language is Go and the hub client is sonora-cli's public `hub` package
-  with its embedded API specification, as decided in
+- **AS-001**: The implementation language is Go and the hub client is sonora-cli's public `hub`
+  package with its embedded API specification, as decided in
   `docs/future/go-rewrite-shared-hub-client.md` and required by the constitution (Principle I).
-- sonora-cli's `hub` package (PR #19, branch `010-public-hub-package`) already covers all 24
-  operations and its response types carry every field the specification defines for them (checked for
-  outputs and routes on 2026-09-27; the conformance test covers the rest). Development uses a
-  local workspace against that branch; merging this feature requires a tagged sonora-cli
-  release (constitution: dependency pinning).
-- Tool results may differ from the old server in formatting (field order, whitespace) but not in
-  content. Error message wording may differ; error content and categories are new.
-- List results are an object wrapping the array (`{"inputs": [...]}`, `{"outputs": [...]}`,
-  `{"groups": [...]}`, `{"routes": [...]}`) in both the structured data and the JSON text, because
-  MCP clients require structured data to be an object. The old server returned the bare array as
-  text; the items are unchanged. Agents read the text as JSON, so this is treated as a formatting
-  change.
-- The old server returned `{"success": true, "status": 204}` for no-body responses; an
-  equivalent explicit confirmation is sufficient, exact wording is not preserved.
-- Tool descriptions may be richer than the old ones (which were one-line summaries); names and
-  inputs are what must not change.
-- New tools for operations the shared client already supports (speak, voices, extensions,
-  stop-all, stop by output/group) are out of scope and follow as a separate feature.
-- Authentication, remote exposure, MCP resources, prompts and push notifications are out of
-  scope; the server stays on a trusted home LAN (constitution: Security).
-- The Pi runs a Linux distribution with a standard service manager (Raspberry Pi OS / systemd),
-  as the hub's Pi does; the operator can run the install script with administrator rights.
-- The time limit per hub call is the shared client's default (5 seconds), from one client shared
-  by all 24 tools; none of them needs a longer bound. A future tool that does (e.g. text-to-speech)
-  must also revisit the shutdown drain and SC-003.
-- The Pi has outbound internet access to GitHub (`github.com`, `objects.githubusercontent.com`)
-  at install time only, to download the release binary the install script fetches; no inbound
-  exposure changes and no internet access is needed once the server is running.
+  [Source: specs/001-go-rewrite/spec.md -> "The implementation language is Go"]
+- **AS-002**: sonora-cli's `hub` package (PR #19, branch `010-public-hub-package`) already covers
+  all 24 operations and its response types carry every field the specification defines for them
+  (checked for outputs and routes on 2026-09-27; the conformance test covers the rest).
+  Development uses a local workspace against that branch; merging this feature requires a tagged
+  sonora-cli release (constitution: dependency pinning).
+  [Source: specs/001-go-rewrite/spec.md -> "sonora-cli's `hub` package (PR #19"]
+- **AS-003**: Tool results may differ from the old server in formatting (field order,
+  whitespace) but not in content. Error message wording may differ; error content and categories
+  are new. [Source: specs/001-go-rewrite/spec.md -> "Tool results may differ from the old server in formatting"]
+- **AS-004**: List results are an object wrapping the array (`{"inputs": [...]}`,
+  `{"outputs": [...]}`, `{"groups": [...]}`, `{"routes": [...]}`) in both the structured data and
+  the JSON text, because MCP clients require structured data to be an object. The old server
+  returned the bare array as text; the items are unchanged. Agents read the text as JSON, so this
+  is treated as a formatting change. [Source: specs/001-go-rewrite/spec.md -> "List results are an object wrapping the array"]
+- **AS-005**: The old server returned `{"success": true, "status": 204}` for no-body responses;
+  an equivalent explicit confirmation is sufficient, exact wording is not preserved.
+  [Source: specs/001-go-rewrite/spec.md -> "The old server returned `{\"success\": true, \"status\": 204}`"]
+- **AS-006**: Tool descriptions may be richer than the old ones (which were one-line
+  summaries); names and inputs are what must not change.
+  [Source: specs/001-go-rewrite/spec.md -> "Tool descriptions may be richer than the old ones"]
+- **AS-007**: New tools for operations the shared client already supports (speak, voices,
+  extensions, stop-all, stop by output/group) are out of scope and follow as a separate feature.
+  [Source: specs/001-go-rewrite/spec.md -> "New tools for operations the shared client already supports"]
+- **AS-008**: Authentication, remote exposure, MCP resources, prompts and push notifications are
+  out of scope; the server stays on a trusted home LAN (constitution: Security).
+  [Source: specs/001-go-rewrite/spec.md -> "Authentication, remote exposure, MCP resources"]
+- **AS-009**: The Pi runs a Linux distribution with a standard service manager (Raspberry Pi OS
+  / systemd), as the hub's Pi does; the operator can run the install script with administrator
+  rights. [Source: specs/001-go-rewrite/spec.md -> "The Pi runs a Linux distribution with a standard service manager"]
+- **AS-010**: The time limit per hub call is the shared client's default (5 seconds), from one
+  client shared by all 24 tools; none of them needs a longer bound. A future tool that does (e.g.
+  text-to-speech) must also revisit the shutdown drain and SC-003.
+  [Source: specs/001-go-rewrite/spec.md -> "The time limit per hub call is the shared client's default"]
+- **AS-011**: The Pi has outbound internet access to GitHub (`github.com`,
+  `objects.githubusercontent.com`) at install time only, to download the release binary the
+  install script fetches; no inbound exposure changes and no internet access is needed once the
+  server is running. [Source: specs/001-go-rewrite/spec.md -> "The Pi has outbound internet access to GitHub"]

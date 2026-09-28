@@ -58,3 +58,97 @@
   Bump its `RELEASE_TAG` in the commit that gets tagged. It downloads the release archive and
   verifies it against `checksums.txt`, so the GoReleaser archive naming
   (`sonora-mcp_<version>_linux_arm64.tar.gz`) is part of its contract.
+
+## Active Technologies
+
+- Go 1.27, `CGO_ENABLED=0` static builds (Windows amd64 for development, linux/arm64 on the Pi).
+- `github.com/modelcontextprotocol/go-sdk` v1.8.0 (typed `mcp.AddTool`, stateless Streamable
+  HTTP), with `github.com/google/jsonschema-go` for schemas.
+- `github.com/Sonora-Multiroom/sonora-cli` v0.1.1 (`hub` client, `api.Spec`).
+- Standard library otherwise: `net/http`, `flag`, `log/slog`, `os/signal`.
+- GoReleaser and GitHub Actions for releases and PR checks; systemd on the Pi.
+
+## Project Structure
+
+- `cmd/sonora-mcp`: entry point (config, server, signal handling, exit codes).
+- `internal/config`, `internal/version`: flags and the build version.
+- `internal/tools`: the 24 tools, schemas, error categories, logging middleware, and the fake
+  hub, conformance and architecture tests.
+- `internal/server`: `/mcp`, `/health`, graceful shutdown.
+- `deploy/pi/install.sh`: the Pi installer with the embedded systemd unit.
+- `.specify/memory/`: the constitution plus the master `spec.md`, `plan.md` and `changelog.md`,
+  which describe the current system. Merged features are archived under `.specify/archive/`;
+  `specs/` holds only work in progress.
+
+## Commands
+
+- Gate: `gofmt -l .`, `go vet ./...`, `go test ./...` (with `GOWORK=off` when a `go.work` exists).
+- Run: `go run ./cmd/sonora-mcp --multiroom-url http://multiroom.lan:8080 [--port 3001] [--host 127.0.0.1]`.
+- Health: `curl http://localhost:3001/health`.
+- Inspect tools: `npx @modelcontextprotocol/inspector`, then connect to `http://localhost:3001/mcp`.
+
+## Recent Changes
+
+- specs/001-go-rewrite: Go rewrite on sonora-cli's `hub` package, released as v1.1.0. Same 24
+  tools with structured results and category-prefixed errors; `--host`, `/health` hub check,
+  graceful shutdown; one-command Pi install; GoReleaser releases; Node.js server removed.
+
+## Known Issues & Gotchas
+
+### ⚠️ `jsonschema` struct tags carry only descriptions
+**Issue:** Constraints such as ranges, enums, lengths and patterns can't be written as struct tags.
+**Root Cause:** In `google/jsonschema-go` the `jsonschema` tag is only the description; tags
+starting `WORD=` are rejected.
+**Prevention Rule:** Set constraints on the inferred schema at registration (`internal/tools/schema.go`).
+
+### ⚠️ The error category is only a text prefix
+**Issue:** Errors can't carry the category in a structured field or `_meta`, and schema failures
+use the SDK's `validating "arguments": ...` text without a prefix.
+**Root Cause:** The typed `mcp.AddTool` discards any result a handler builds when it returns an
+error, and the SDK validates input before the handler runs.
+**Prevention Rule:** Keep `"<Category>: <message>"` as the contract; switch to the low-level
+`Server.AddTool` only if a client needs a structured category.
+
+### ⚠️ The SDK doesn't recover panics
+**Issue:** A panic in a tool handler would crash the whole server.
+**Root Cause:** The MCP Go SDK has no `recover()` around handlers.
+**Prevention Rule:** Register every tool through the helper that wraps it in `recoverPanics`.
+
+### ⚠️ Cancellation reaches the hub only for newer clients
+**Issue:** For MCP protocol versions before 2026-07-28, a client disconnect doesn't cancel the
+hub call.
+**Root Cause:** `PropagateRequestCancellation` ties the handler context to the HTTP request only
+for protocol ≥ 2026-07-28.
+**Prevention Rule:** Keep the 5 s hub timeout as the bound, and keep the HTTP cancellation test
+that fails if `PropagateRequestCancellation` is dropped.
+
+### ⚠️ Loopback requests with a foreign `Host` get 403
+**Issue:** Requests through 127.0.0.1 with a non-localhost `Host` header are rejected.
+**Root Cause:** The SDK's DNS-rebinding protection is on by default.
+**Prevention Rule:** Keep it on; LAN clients connecting via the Pi's LAN address are unaffected.
+
+### ⚠️ Structured results must be objects
+**Issue:** Returning a bare array as `structuredContent` breaks clients.
+**Root Cause:** MCP clients before SEP-2106 require `structuredContent` to be an object.
+**Prevention Rule:** Wrap lists (`{"outputs": [...]}`) and return `{"deleted": true, "<id>": ...}`
+for no-body operations.
+
+### ⚠️ Path IDs need `minLength: 1` although the spec doesn't say so
+**Issue:** An empty path ID changes the route (`GET /api/v2/outputs/` is the list endpoint).
+**Root Cause:** The hub spec types path parameters as plain strings.
+**Prevention Rule:** Give path IDs `minLength: 1`; the conformance test compares path parameters
+as if the spec declared it. Query and body parameters get no such allowance.
+
+### ⚠️ Optional hub fields must be omitted, not zeroed
+**Issue:** An agent omitting `createInput.enabled` would have created a disabled input.
+**Root Cause:** `hub.CreateInputRequest.Enabled`/`AutoRemove` were plain `bool` without
+`omitempty`, so `false` was sent instead of letting the hub apply its defaults.
+**Prevention Rule:** Optional hub request fields are pointers with `omitempty`, fixed in
+sonora-cli; never fill in hub defaults here (Principle III).
+
+### ⚠️ Overwriting the running binary fails on the Pi
+**Issue:** Copying over `/usr/local/bin/sonora-mcp` while the service runs fails with "Text file
+busy".
+**Root Cause:** Linux refuses writes to an executing file, but allows renaming over it.
+**Prevention Rule:** Write to a temp file in `/usr/local/bin`, `chmod 0755`, then `mv -f` onto the
+target.

@@ -18,3 +18,4 @@ go.work.sum
 specs/archive/
 specs/drafts/
 specs/*/checklists/requirements.md
+.specify/archive/*/checklists/requirements.md

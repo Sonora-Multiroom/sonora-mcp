@@ -523,7 +523,9 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   non-routable address → `Timeout:` after 5 s. §6: `--host 127.0.0.1` answers on localhost and
   refuses the LAN address; without `--host` the LAN address answers (and the Pi service answers
   from another machine). §7 is covered by the shutdown tests and the Pi's systemd restarts.
-  Remaining: MCP Inspector and VS Code with `.vscode/mcp.json` (§4.1, §4.3)
+  §4.1: checked with MCP Inspector. §4.3: `.vscode/mcp.json` is VS Code's own MCP configuration
+  (GitHub Copilot); Claude Code in VS Code ignores it (it reads a root `.mcp.json`), so it was not
+  exercised from Claude Code. Kept unchanged as the Copilot and README reference configuration
 - [X] T073 Fix in sonora-cli (Principle I), then bump: `hub.TransferRoute` reports every 404 as
   `route not found: <routeId>` and `hub.CreateRoute` every 404 as `target not found`, although the
   spec's 404 means "route or target" / "input or target" and the hub's problem body names the
@@ -533,11 +535,15 @@ an assistant with the existing config, request `/health` (spec US5, quickstart �
   — **Done**: sonora-cli PR #20 → v0.1.1, pinned here with a regression test; Windows and Linux
   (`-race`) gates pass; live against the real hub: transfer to a missing output → `NotFound: output
   not found: no-such-output`, missing route/input/group each named correctly
-- [ ] T072 Cut the `v1.1.0` release from `main` (FR-017c; constitution: dependency pinning). Before
+- [X] T072 Cut the `v1.1.0` release from `main` (FR-017c; constitution: dependency pinning). Before
   merge, as the last commit of the PR: set `RELEASE_TAG="v1.1.0"` in `deploy/pi/install.sh`. After
   the PR is merged: tag `main` `v1.1.0` with `release.sh` (the release workflow builds and
   publishes it); confirm the `sonora-mcp_1.1.0_linux_arm64.tar.gz` download URL returns `200`; re-run `install.sh` on the Pi **without** `--version` and check `/health` reports
   `1.1.0`; delete the `v1.1.0-rc.1` prerelease and tag
+  — **Done (2026-09-28)**: PR #1 squash-merged as `811d696`, tagged `v1.1.0` and published by the
+  release workflow; the linux/arm64 archive URL returns `200`; the one-command install without
+  `--version` upgraded the Pi, and `/health` on port 3001 reports `1.1.0` with the hub reachable;
+  the `v1.1.0-rc.1` prerelease and tag are deleted
 
 ---
 
