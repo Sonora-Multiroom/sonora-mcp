@@ -251,30 +251,30 @@ the hub's new state; out-of-range volume makes no request (spec US2).
 
 ### Tests (write first, must fail)
 
-- [ ] T032 [P] [US2] Write `internal/tools/outputs_control_test.go`: `setOutputVolume`
+- [X] T032 [P] [US2] Write `internal/tools/outputs_control_test.go`: `setOutputVolume`
   (`PUT /api/v2/outputs/{outputId}/volume` body `{"volume":35}`, returns OutputVolume; `volume` 150
   and -1 and 35.5 rejected with no hub request — "integer, 0–100"), `setOutputMute`
   (`PUT …/mute` `{"muted":true}`, then `{"muted":false}` — the body must contain the `false` key,
   not drop it), `setOutputEnabled` (`PUT …/enabled` `{"enabled":false}`); all annotated idempotent
-- [ ] T033 [P] [US2] Write `internal/tools/groups_control_test.go`: `setGroupVolume`,
+- [X] T033 [P] [US2] Write `internal/tools/groups_control_test.go`: `setGroupVolume`,
   `setGroupMute`, `setGroupEnabled` (paths `/api/v2/groups/{groupId}/volume|mute|enabled`), same
   assertions as T032, including `{"muted":false}` for `setGroupMute`
-- [ ] T034 [P] [US2] Write `internal/tools/inputs_enabled_test.go`: `setInputEnabled`
+- [X] T034 [P] [US2] Write `internal/tools/inputs_enabled_test.go`: `setInputEnabled`
   (`PUT /api/v2/inputs/{inputId}/enabled`), idempotent
-- [ ] T035 [P] [US2] Write `internal/tools/mastermute_set_test.go`: `setMasterMute`
+- [X] T035 [P] [US2] Write `internal/tools/mastermute_set_test.go`: `setMasterMute`
   (`PUT /api/v2/master-mute` `{"muted":true}`, then `{"muted":false}` with the `false` key present),
   idempotent
 
 ### Implementation
 
-- [ ] T036 [P] [US2] Implement `setOutputVolume`, `setOutputMute`, `setOutputEnabled` in
+- [X] T036 [P] [US2] Implement `setOutputVolume`, `setOutputMute`, `setOutputEnabled` in
   `internal/tools/outputs.go` (`withRange("volume", 0, 100)`; `hub.SetOutputVolume`,
   `hub.SetOutputMuted`, `hub.SetOutputEnabled`)
-- [ ] T037 [P] [US2] Implement `setGroupVolume`, `setGroupMute`, `setGroupEnabled` in
+- [X] T037 [P] [US2] Implement `setGroupVolume`, `setGroupMute`, `setGroupEnabled` in
   `internal/tools/groups.go` (`hub.SetGroupVolume`, `hub.SetGroupMuted`, `hub.SetGroupEnabled`)
-- [ ] T038 [P] [US2] Implement `setInputEnabled` in `internal/tools/inputs.go`
+- [X] T038 [P] [US2] Implement `setInputEnabled` in `internal/tools/inputs.go`
   (`hub.SetInputEnabled`)
-- [ ] T039 [P] [US2] Implement `setMasterMute` in `internal/tools/playback.go`
+- [X] T039 [P] [US2] Implement `setMasterMute` in `internal/tools/playback.go`
   (`hub.SetMasterMute`)
 
 **Checkpoint**: 18 tools; conformance test green.
