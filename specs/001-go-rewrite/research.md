@@ -162,7 +162,7 @@ than recalled. The hub facts were checked against sonora-cli branch `010-public-
 ## R11. Version injection (FR-016)
 
 - **Decision**: `internal/version.Version` (default `dev`) set with
-  `-ldflags "-X github.com/tiger-seo/sonora-mcp/internal/version.Version=<v>"`; used by
+  `-ldflags "-X github.com/Sonora-Multiroom/sonora-mcp/internal/version.Version=<v>"`; used by
   `mcp.Implementation{Name: "sonora-mcp", Version}`, `/health` and the startup log. A test asserts all
   three read the same variable. First Go release: **1.1.0** (no tool renamed or input changed, so not
   MAJOR per Principle II; new flag and health field are additive).
@@ -186,7 +186,7 @@ than recalled. The hub facts were checked against sonora-cli branch `010-public-
   `--version`, T060a), matching the GitHub Release the cross-built
   `linux/arm64` binary (`sonora-mcp-linux-arm64`) was uploaded to. At install time the script
   downloads that asset with `curl -fsSL` from
-  `https://github.com/tiger-seo/sonora-mcp/releases/download/${RELEASE_TAG}/sonora-mcp-linux-arm64`
+  `https://github.com/Sonora-Multiroom/sonora-mcp/releases/download/${RELEASE_TAG}/sonora-mcp-linux-arm64`
   to a temp file in `/usr/local/bin`, then `chmod 0755` and `mv -f` onto
   `/usr/local/bin/sonora-mcp` (writing over a running executable fails with "Text file busy"; a
   rename does not, and a failed download leaves the installed binary intact); it fails with a clear
@@ -194,7 +194,7 @@ than recalled. The hub facts were checked against sonora-cli branch `010-public-
   takes flags `--hub-url` (required), `--port`, `--host`, `--version` (overrides the baked-in
   `RELEASE_TAG` to install a different release); writes the env file and the unit; runs
   `daemon-reload`; `enable --now` or `restart` if already installed; idempotent; prints status.
-  The repo is public (`tiger-seo/sonora-mcp` on GitHub), so the download needs no credentials.
+  The repo is public (`Sonora-Multiroom/sonora-mcp` on GitHub), so the download needs no credentials.
 - **Rationale**: `DynamicUser` avoids creating a system user; env file makes reconfiguration a
   re-run; downloading from a pinned release keeps `install.sh` small and readable (no binary blob
   in git history or in the copied file) while still needing only one file copied to the Pi

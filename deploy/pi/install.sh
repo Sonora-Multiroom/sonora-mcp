@@ -12,7 +12,7 @@ set -euo pipefail
 # that gets tagged on main; override with --version.
 RELEASE_TAG="dev"
 
-REPO="tiger-seo/sonora-mcp"
+REPO="Sonora-Multiroom/sonora-mcp"
 ASSET="sonora-mcp-linux-arm64"
 BIN="/usr/local/bin/sonora-mcp"
 ENV_FILE="/etc/default/sonora-mcp"

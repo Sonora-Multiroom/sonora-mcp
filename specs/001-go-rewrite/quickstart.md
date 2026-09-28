@@ -49,7 +49,7 @@ Revert.
 ## 3. Run locally
 
 ```powershell
-go build -ldflags "-X github.com/tiger-seo/sonora-mcp/internal/version.Version=1.1.0" -o sonora-mcp.exe ./cmd/sonora-mcp
+go build -ldflags "-X github.com/Sonora-Multiroom/sonora-mcp/internal/version.Version=1.1.0" -o sonora-mcp.exe ./cmd/sonora-mcp
 .\sonora-mcp.exe                                   # expect usage on stderr, exit code 2
 .\sonora-mcp.exe --help                            # expect usage, exit code 0
 .\sonora-mcp.exe --multiroom-url http://multiroom.lan:8080/
@@ -102,7 +102,7 @@ On the development machine:
 
 ```powershell
 $env:GOWORK="off"; $env:GOOS="linux"; $env:GOARCH="arm64"; $env:CGO_ENABLED="0"   # build from go.mod, not the local sonora-cli checkout
-go build -ldflags "-X github.com/tiger-seo/sonora-mcp/internal/version.Version=1.1.0-rc.1" -o dist/pi/sonora-mcp-linux-arm64 ./cmd/sonora-mcp
+go build -ldflags "-X github.com/Sonora-Multiroom/sonora-mcp/internal/version.Version=1.1.0-rc.1" -o dist/pi/sonora-mcp-linux-arm64 ./cmd/sonora-mcp
 Remove-Item Env:GOWORK, Env:GOOS, Env:GOARCH, Env:CGO_ENABLED
 gh release create v1.1.0-rc.1 dist/pi/sonora-mcp-linux-arm64 --title v1.1.0-rc.1 --prerelease   # T060a
 scp deploy/pi/install.sh pi@multiroom.lan:~/install.sh

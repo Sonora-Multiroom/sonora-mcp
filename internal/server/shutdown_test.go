@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Sonora-Multiroom/sonora-mcp/internal/tools"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/tiger-seo/sonora-mcp/internal/tools"
 )
 
 // freeAddr returns a loopback address with a port nothing listens on.

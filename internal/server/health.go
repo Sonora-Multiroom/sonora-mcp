@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Sonora-Multiroom/sonora-cli/hub"
-	"github.com/tiger-seo/sonora-mcp/internal/version"
+	"github.com/Sonora-Multiroom/sonora-mcp/internal/version"
 )
 
 // hubCheckTimeout bounds the hub request made by each health check.

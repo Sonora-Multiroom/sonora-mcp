@@ -1,4 +1,4 @@
-module github.com/tiger-seo/sonora-mcp
+module github.com/Sonora-Multiroom/sonora-mcp
 
 go 1.27.0
 

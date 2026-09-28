@@ -24,7 +24,7 @@ written first and must fail before its implementation task starts. All tests run
 
 ## Conventions for every task
 
-- Module `github.com/tiger-seo/sonora-mcp`; Go 1.27; `gofmt`-formatted; godoc on exported identifiers;
+- Module `github.com/Sonora-Multiroom/sonora-mcp`; Go 1.27; `gofmt`-formatted; godoc on exported identifiers;
   errors wrapped with `%w`.
 - Hub calls ONLY through `github.com/Sonora-Multiroom/sonora-cli/hub` (imported as `hub`), using the
   request `context.Context` and the `*http.Client` passed into `tools.Register`. No local hub types.
@@ -54,7 +54,7 @@ written first and must fail before its implementation task starts. All tests run
 
 **Purpose**: Go module and repository basics. Node.js files stay untouched until Phase 8.
 
-- [X] T001 Create `go.mod` with `module github.com/tiger-seo/sonora-mcp` and `go 1.27`; run
+- [X] T001 Create `go.mod` with `module github.com/Sonora-Multiroom/sonora-mcp` and `go 1.27`; run
   `go get github.com/modelcontextprotocol/go-sdk@v1.8.0` and
   `go get github.com/Sonora-Multiroom/sonora-cli@010-public-hub-package` (pseudo-version of PR #19,
   allowed on this feature branch only; replaced by a tag in T069); commit `go.mod`/`go.sum`
@@ -62,7 +62,7 @@ written first and must fail before its implementation task starts. All tests run
   `go.work.sum`; keep the existing Node and Spec Kit rules for now
 - [X] T003 [P] Create `internal/version/version.go`: package `version` with
   `var Version = "dev"` and a godoc saying it is set via
-  `-ldflags "-X github.com/tiger-seo/sonora-mcp/internal/version.Version=<v>"`
+  `-ldflags "-X github.com/Sonora-Multiroom/sonora-mcp/internal/version.Version=<v>"`
 - [X] T003a [P] Commit the design note `docs/future/go-rewrite-shared-hub-client.md` on its own
   (`docs:` commit) so the references to it from spec.md, the constitution's Sync Impact Report and
   plan decisions resolve after merge
@@ -416,7 +416,7 @@ an assistant with the existing config, request `/health` (spec US5, quickstart Â
   `SONORA_HOST_ARG=--host <addr>`), `--version` (overrides `RELEASE_TAG`); checks root, systemd
   and `curl` present, and that `uname -m` is `aarch64` (else a clear "64-bit ARM OS required"
   message and non-zero exit, before downloading anything); downloads the binary with `curl -fsSL`
-  from `https://github.com/tiger-seo/sonora-mcp/releases/download/<tag>/sonora-mcp-linux-arm64`
+  from `https://github.com/Sonora-Multiroom/sonora-mcp/releases/download/<tag>/sonora-mcp-linux-arm64`
   (`<tag>` = `--version` or `RELEASE_TAG`) to a temp file in `/usr/local/bin` (`mktemp`, removed by
   an `EXIT` trap on failure), `chmod 0755`, then `mv -f` onto `/usr/local/bin/sonora-mcp` â€” an
   atomic rename, so re-running while the service is up doesn't fail with "Text file busy" and a
@@ -429,7 +429,7 @@ an assistant with the existing config, request `/health` (spec US5, quickstart Â
   sonora-cli pseudo-version in `go.mod` and not from a local checkout (re-run
   `go get github.com/Sonora-Multiroom/sonora-cli@010-public-hub-package` first if the branch has
   moved): `GOWORK=off GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "-X
-  github.com/tiger-seo/sonora-mcp/internal/version.Version=1.1.0-rc.1" -o dist/pi/sonora-mcp-linux-arm64
+  github.com/Sonora-Multiroom/sonora-mcp/internal/version.Version=1.1.0-rc.1" -o dist/pi/sonora-mcp-linux-arm64
   ./cmd/sonora-mcp` succeeds; record the binary size for the PR description (Principle VI)
 - [ ] T060a [US5] Publish a **prerelease** for Pi validation (FR-017c), not the final release: the
   feature branch still depends on a sonora-cli pseudo-version, so `v1.1.0` is only cut from `main`
@@ -437,7 +437,7 @@ an assistant with the existing config, request `/health` (spec US5, quickstart Â
   `gh release create v1.1.0-rc.1 dist/pi/sonora-mcp-linux-arm64 --title v1.1.0-rc.1 --prerelease`
   (asset name `sonora-mcp-linux-arm64`; the repo is public, so no credentials); leave `RELEASE_TAG`
   in `install.sh` unchanged; confirm `curl -fsSL -o /dev/null -w '%{http_code}'
-  https://github.com/tiger-seo/sonora-mcp/releases/download/v1.1.0-rc.1/sonora-mcp-linux-arm64`
+  https://github.com/Sonora-Multiroom/sonora-mcp/releases/download/v1.1.0-rc.1/sonora-mcp-linux-arm64`
   returns `200`
 - [ ] T061 [US5] Validate on the Pi per quickstart.md Â§8 with `--version v1.1.0-rc.1` (install,
   `/health`, re-run with another port, kill â†’ restart, reboot â†’ running); time the install (SC-008:
@@ -489,7 +489,7 @@ an assistant with the existing config, request `/health` (spec US5, quickstart Â
   Workflow Â§4): `gofmt -l .` empty, `go vet ./...`, `go build ./...`, `go test ./...` (with the
   network disabled once, SC-006; includes the T015a architecture check); also build the Windows
   executable (FR-017): `go build -ldflags "-X
-  github.com/tiger-seo/sonora-mcp/internal/version.Version=1.1.0-rc.1" -o sonora-mcp.exe
+  github.com/Sonora-Multiroom/sonora-mcp/internal/version.Version=1.1.0-rc.1" -o sonora-mcp.exe
   ./cmd/sonora-mcp` and check `sonora-mcp.exe --help` exits 0. Then run `go vet ./...` and `go test -race ./...` on Linux (WSL or a
   `golang:1.27` container with the workspace mounted) to meet FR-019 / Principle V ("pass on
   Windows and Linux"); `-race` runs only there because it needs cgo and a C toolchain, which the

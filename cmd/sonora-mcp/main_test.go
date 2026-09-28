@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Sonora-Multiroom/sonora-mcp/internal/config"
+	"github.com/Sonora-Multiroom/sonora-mcp/internal/version"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/tiger-seo/sonora-mcp/internal/config"
-	"github.com/tiger-seo/sonora-mcp/internal/version"
 )
 
 func runWith(t *testing.T, args ...string) (code int, stdout, stderr string) {

@@ -89,7 +89,7 @@ specs/001-go-rewrite/
 ### Source Code (repository root)
 
 ```text
-go.mod                         # module github.com/tiger-seo/sonora-mcp; go 1.27
+go.mod                         # module github.com/Sonora-Multiroom/sonora-mcp; go 1.27
 go.sum
 cmd/sonora-mcp/
 ├── main.go                    # parse config, build server, run until signal, exit codes

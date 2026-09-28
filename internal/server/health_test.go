@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Sonora-Multiroom/sonora-mcp/internal/version"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/tiger-seo/sonora-mcp/internal/version"
 )
 
 // getHealth serves GET /health from a server whose tools use hubURL and

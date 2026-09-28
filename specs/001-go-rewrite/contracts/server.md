@@ -55,7 +55,7 @@ Always `200 OK` while the server runs; `Content-Type: application/json`.
 ## Build
 
 ```
-go build -ldflags "-X github.com/tiger-seo/sonora-mcp/internal/version.Version=<v>" ./cmd/sonora-mcp
+go build -ldflags "-X github.com/Sonora-Multiroom/sonora-mcp/internal/version.Version=<v>" ./cmd/sonora-mcp
 GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "..." -o dist/pi/sonora-mcp-linux-arm64 ./cmd/sonora-mcp
 gh release create <tag> dist/pi/sonora-mcp-linux-arm64 --title <tag>   # once per release
 ```
@@ -82,7 +82,7 @@ sudo ./install.sh --hub-url <url> [--port <port>] [--host <address>] [--version 
 
 | Effect | Detail |
 |---|---|
-| Binary | Downloaded with `curl -fsSL` from `https://github.com/tiger-seo/sonora-mcp/releases/download/<tag>/sonora-mcp-linux-arm64` (`<tag>` = `--version` if given, else the script's baked-in `RELEASE_TAG`) to a temp file in `/usr/local/bin`, set to mode 0755, then renamed (`mv -f`) onto `/usr/local/bin/sonora-mcp`. The rename works while the old binary is running, and a failed download leaves it untouched |
+| Binary | Downloaded with `curl -fsSL` from `https://github.com/Sonora-Multiroom/sonora-mcp/releases/download/<tag>/sonora-mcp-linux-arm64` (`<tag>` = `--version` if given, else the script's baked-in `RELEASE_TAG`) to a temp file in `/usr/local/bin`, set to mode 0755, then renamed (`mv -f`) onto `/usr/local/bin/sonora-mcp`. The rename works while the old binary is running, and a failed download leaves it untouched |
 | Config | `/etc/default/sonora-mcp` with `SONORA_HUB_URL`, `SONORA_PORT`, `SONORA_HOST_ARG` |
 | Unit | Written from the script's embedded heredoc to `/etc/systemd/system/sonora-mcp.service` |
 | Service | `daemon-reload`; enabled at boot; started, or restarted if already running |

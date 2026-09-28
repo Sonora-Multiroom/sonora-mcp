@@ -140,7 +140,7 @@ service. A small codebase stays auditable by one person.
 ## Technology & Operational Constraints
 
 - **Language & toolchain**: Go, at the same version as sonora-cli's `go.mod` (currently
-  1.27). Module path `github.com/tiger-seo/sonora-mcp`.
+  1.27). Module path `github.com/Sonora-Multiroom/sonora-mcp`.
 - **MCP**: official MCP Go SDK; Streamable HTTP transport served at `/mcp`, plus a
   `GET /health` endpoint that reports server name and version.
 - **Dependency pinning**: `go.mod` on `main` MUST require a tagged sonora-cli release. Pseudo-

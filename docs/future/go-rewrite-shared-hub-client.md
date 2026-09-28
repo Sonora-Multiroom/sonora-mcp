@@ -34,7 +34,7 @@ sonora-cli/                 module github.com/Sonora-Multiroom/sonora-cli   (pub
   internal/cli/exitcode/    ← new: ErrorClass → exit code mapping (moved out of hub)
   cmd/sonora/
 
-sonora-mcp/                 module github.com/tiger-seo/sonora-mcp
+sonora-mcp/                 module github.com/Sonora-Multiroom/sonora-mcp
   go.mod                    require github.com/Sonora-Multiroom/sonora-cli v0.x.y
   cmd/sonora-mcp/main.go    flags, HTTP server, /mcp and /health
   internal/tools/           one MCP tool per hub operation, each calling the hub package
@@ -205,9 +205,8 @@ make sure the build passes with `GOWORK=off` before merging.
 - **Coupled release cadence (the cost of 2a)**: a hub fix needs a sonora-cli tag before
   sonora-mcp can use it. If this becomes painful, split `hub/` and `api/` into their own repo
   (option 2b). Import paths change but the API doesn't.
-- **Different repo owners**: sonora-cli is under `Sonora-Multiroom`, sonora-mcp under
-  `tiger-seo`. This doesn't matter to Go (sonora-cli is public, so no `GOPRIVATE` is needed),
-  but consider moving sonora-mcp into the org for consistency.
+- **Repo owner**: sonora-mcp has moved into the `Sonora-Multiroom` org next to sonora-cli, and
+  its module path is `github.com/Sonora-Multiroom/sonora-mcp`.
 - **Hub URL configuration**: sonora-cli has `internal/config` (hub URL discovery). The MCP
   server keeps the explicit required flag (Principle III). Don't make `config` public unless a
   concrete need appears.

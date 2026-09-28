@@ -15,11 +15,11 @@ import (
 	"syscall"
 
 	"github.com/Sonora-Multiroom/sonora-cli/hub"
+	"github.com/Sonora-Multiroom/sonora-mcp/internal/config"
+	"github.com/Sonora-Multiroom/sonora-mcp/internal/server"
+	"github.com/Sonora-Multiroom/sonora-mcp/internal/tools"
+	"github.com/Sonora-Multiroom/sonora-mcp/internal/version"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/tiger-seo/sonora-mcp/internal/config"
-	"github.com/tiger-seo/sonora-mcp/internal/server"
-	"github.com/tiger-seo/sonora-mcp/internal/tools"
-	"github.com/tiger-seo/sonora-mcp/internal/version"
 )
 
 func main() {
