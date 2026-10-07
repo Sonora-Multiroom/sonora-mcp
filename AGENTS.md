@@ -64,7 +64,7 @@
 - Go 1.27, `CGO_ENABLED=0` static builds (Windows amd64 for development, linux/arm64 on the Pi).
 - `github.com/modelcontextprotocol/go-sdk` v1.8.0 (typed `mcp.AddTool`, stateless Streamable
   HTTP), with `github.com/google/jsonschema-go` for schemas.
-- `github.com/Sonora-Multiroom/sonora-cli` v0.1.1 (`hub` client, `api.Spec`).
+- `github.com/Sonora-Multiroom/sonora-cli` v0.1.3 (`hub` client, `api.Spec`).
 - Standard library otherwise: `net/http`, `flag`, `log/slog`, `os/signal`.
 - GoReleaser and GitHub Actions for releases and PR checks; systemd on the Pi.
 

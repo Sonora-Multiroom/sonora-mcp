@@ -25,7 +25,7 @@ func TestCreateRouteRejectsUnknownTargetType(t *testing.T) {
 }
 
 func TestTransferRoute(t *testing.T) {
-	const transferred = `{"routeId":"r-1","inputId":"radio-1","targetId":"downstairs","targetType":"OUTPUT_GROUP","status":"ACTIVE","createdAt":"2026-09-28T10:00:00Z","startedAt":"2026-09-28T10:00:01Z","transferable":true,"pauseable":true,"paused":false}`
+	const transferred = `{"routeId":"r-1","inputId":"radio-1","targetId":"downstairs","targetType":"OUTPUT_GROUP","status":"ACTIVE","createdAt":"2026-09-28T10:00:00Z","startedAt":"2026-09-28T10:00:01Z","transferable":true,"pauseable":true,"paused":false,"joinMode":"MIX","outputs":["kitchen","living-room"]}`
 	hub := newFakeHub(t)
 	hub.handle("POST", "/api/v2/routes/r-1/transfer", http.StatusOK, transferred)
 	s := newTestSession(t, hub.URL, nil)
@@ -50,6 +50,7 @@ func TestSetRoutePause(t *testing.T) {
 			"routeId": "r-1", "inputId": "radio-1", "targetId": "kitchen", "targetType": "SINGLE_OUTPUT",
 			"status": "ACTIVE", "createdAt": "2026-09-28T10:00:00Z", "startedAt": "2026-09-28T10:00:01Z",
 			"transferable": true, "pauseable": true, "paused": paused,
+			"joinMode": "REPLACE", "outputs": []string{"kitchen"},
 		})
 		hub := newFakeHub(t)
 		hub.handle("PUT", "/api/v2/routes/r-1/pause", http.StatusOK, want)

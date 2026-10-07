@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-const createdInputJSON = `{"inputId":"podcast-1","displayName":"Podcast","uri":"http://podcast.example/ep1.mp3","enabled":true,"autoRemove":true,"source":"EPHEMERAL","createdAt":"2026-09-28T10:00:00Z","pauseable":true}`
+const createdInputJSON = `{"inputId":"podcast-1","displayName":"Podcast","uri":"http://podcast.example/ep1.mp3","enabled":true,"autoRemove":true,"source":"EPHEMERAL","createdAt":"2026-09-28T10:00:00Z","pauseable":true,"defaultJoinMode":"DUCK_OTHERS"}`
 
 func TestCreateInputOmitsUnsetFlags(t *testing.T) {
 	hub := newFakeHub(t)

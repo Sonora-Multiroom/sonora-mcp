@@ -48,7 +48,7 @@ func registerPlayback(s *mcp.Server, client *http.Client, hubURL string) int {
 		Name: "playback",
 		Description: "Play a URI on an output or group in one step: the hub creates a temporary input and a route to the target. Changes state: calling it again starts another playback. " +
 			"Returns {\"inputId\", \"route\", \"message\"} with the created input's ID and the new route; " +
-			"fails with NotFound if the target does not exist and SourceUnreachable if the hub cannot open the URI.",
+			"fails with NotFound if the target does not exist, Conflict if the hub refuses the route in its current state (for example the target is disabled; the reason is in parentheses), and SourceUnreachable if the hub cannot open the URI.",
 		Kind: StateChanging, Method: "POST", Path: "/api/v2/play",
 	}, inputSchema[playbackIn](withMinLength("uri", 1), withMinLength("targetId", 1),
 		withEnum("targetType", targetTypes...), withRange("volume", 0, 100)),

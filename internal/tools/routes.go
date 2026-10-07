@@ -57,7 +57,7 @@ func registerRoutes(s *mcp.Server, client *http.Client, hubURL string) int {
 		Name: "listRoutes",
 		Description: "List audio routes (an input playing to an output or group). " +
 			"Optional filters by status, input ID and target ID are combined with AND. Read-only. " +
-			"Returns {\"routes\": [...]} with each route's ID, input, target and target type, status, creation and start times, and whether it can be transferred or paused and is paused.",
+			"Returns {\"routes\": [...]} with each route's ID, input, target and target type, status, creation and start times, whether it can be transferred or paused and is paused, join mode (REPLACE, MIX or DUCK_OTHERS) and the outputs it plays on right now.",
 		Kind: ReadOnly, Method: "GET", Path: "/api/v2/routes",
 	}, inputSchema[listRoutesIn](withEnum("status", routeStatuses...)),
 		func(ctx context.Context, in listRoutesIn) (*routeList, error) {
@@ -71,7 +71,7 @@ func registerRoutes(s *mcp.Server, client *http.Client, hubURL string) int {
 	add(s, toolSpec{
 		Name: "getRoute",
 		Description: "Get one audio route by ID. Read-only. " +
-			"Returns the route's ID, input, target and target type, status, creation and start times (startedAt is null until playback starts), and whether it can be transferred or paused and is paused; fails with NotFound if there is no such route.",
+			"Returns the route's ID, input, target and target type, status, creation and start times (startedAt is null until playback starts), whether it can be transferred or paused and is paused, join mode (REPLACE, MIX or DUCK_OTHERS) and the outputs it plays on right now (a group route may play on fewer outputs than its group has); fails with NotFound if there is no such route.",
 		Kind: ReadOnly, Method: "GET", Path: "/api/v2/routes/{routeId}",
 	}, inputSchema[routeIDIn](withMinLength("routeId", 1)),
 		func(ctx context.Context, in routeIDIn) (*hub.Route, error) {
@@ -81,8 +81,8 @@ func registerRoutes(s *mcp.Server, client *http.Client, hubURL string) int {
 	add(s, toolSpec{
 		Name: "createRoute",
 		Description: "Start playing an input to an output or group by creating a route. Changes state: calling it again creates another route. " +
-			"Returns the new route (ID, input, target and target type, status, creation and start times, whether it can be transferred or paused and is paused); " +
-			"fails with NotFound if the input or target does not exist and RouteFailed if the hub cannot start playback.",
+			"Returns the new route (ID, input, target and target type, status, creation and start times, whether it can be transferred or paused and is paused, join mode, current outputs); " +
+			"fails with NotFound if the input or target does not exist, Conflict if the hub refuses the route in its current state (the reason in parentheses says why: a disabled input, output or group, the route limit, or the input already playing there; change that state and retry), and RouteFailed if the hub cannot start playback.",
 		Kind: StateChanging, Method: "POST", Path: "/api/v2/routes",
 	}, inputSchema[createRouteIn](withMinLength("inputId", 1), withMinLength("targetId", 1), withEnum("targetType", targetTypes...)),
 		func(ctx context.Context, in createRouteIn) (*hub.Route, error) {
@@ -94,7 +94,7 @@ func registerRoutes(s *mcp.Server, client *http.Client, hubURL string) int {
 	add(s, toolSpec{
 		Name: "transferRoute",
 		Description: "Move a playing route to a different output or group without restarting the input. Changes state. " +
-			"Returns the updated route; fails with NotFound if the route or target does not exist and Validation if the route cannot be transferred.",
+			"Returns the updated route, which keeps its ID; fails with NotFound if the route or target does not exist, Conflict if the hub refuses the new target in its current state (for example it is disabled; the reason is in parentheses), and Validation if the route cannot be transferred.",
 		Kind: StateChanging, Method: "POST", Path: "/api/v2/routes/{routeId}/transfer",
 	}, inputSchema[transferRouteIn](withMinLength("routeId", 1), withMinLength("targetId", 1), withEnum("targetType", targetTypes...)),
 		func(ctx context.Context, in transferRouteIn) (*hub.Route, error) {

@@ -398,9 +398,10 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
   [Source: specs/001-go-rewrite/spec.md -> "Tool result"] [Source: specs/001-go-rewrite/data-model.md -> "ToolResult"]
 - **Error result** (per call, failure): message prefixed with the error category, returned to the
   agent instead of data: `isError: true` and one text block `"<Category>: <message>"`. Category is a
-  closed set: `NotFound`, `Validation`, `RouteFailed`, `SourceUnreachable`, `ServiceUnavailable`,
-  `Network`, `Timeout`, `MalformedResponse`, `HubError`, `Internal` (`InvalidInput` appears only in
-  logs). [Source: specs/001-go-rewrite/spec.md -> "Error result"] [Source: specs/001-go-rewrite/data-model.md -> "ErrorResult"]
+  closed set: `NotFound`, `Validation`, `Conflict`, `RouteFailed`, `SourceUnreachable`,
+  `ServiceUnavailable`, `Network`, `Timeout`, `MalformedResponse`, `HubError`, `Internal`
+  (`InvalidInput` appears only in logs). `Conflict` (hub 409) was added on 2026-10-07; its message
+  ends with the hub's refusal reason in parentheses when there is one. [Source: specs/001-go-rewrite/spec.md -> "Error result"] [Source: specs/001-go-rewrite/data-model.md -> "ErrorResult"]
 - **Build version**: one identifier per build (default `dev`), reported by health, server info and
   logs. [Source: specs/001-go-rewrite/spec.md -> "Build version"] [Source: specs/001-go-rewrite/data-model.md -> "BuildVersion"]
 - **HealthStatus** (per `/health` request): `status` `"ok"` (always, while the process serves

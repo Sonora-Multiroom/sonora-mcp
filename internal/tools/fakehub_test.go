@@ -21,9 +21,9 @@ const (
 
 	groupJSON = `{"groupId":"downstairs","displayName":"Downstairs","outputIds":["kitchen","living-room"],"muted":false,"enabled":true}`
 
-	inputJSON = `{"inputId":"radio-1","displayName":"Radio","uri":"http://radio.example/stream","enabled":true,"autoRemove":false,"source":"STATIC","createdAt":"2026-09-01T10:00:00Z","pauseable":false}`
+	inputJSON = `{"inputId":"radio-1","displayName":"Radio","uri":"http://radio.example/stream","enabled":true,"autoRemove":false,"source":"STATIC","createdAt":"2026-09-01T10:00:00Z","pauseable":false,"defaultJoinMode":null}`
 
-	routeJSON = `{"routeId":"r-1","inputId":"radio-1","targetId":"kitchen","targetType":"SINGLE_OUTPUT","status":"ACTIVE","createdAt":"2026-09-28T10:00:00Z","startedAt":null,"transferable":true,"pauseable":true,"paused":false}`
+	routeJSON = `{"routeId":"r-1","inputId":"radio-1","targetId":"kitchen","targetType":"SINGLE_OUTPUT","status":"ACTIVE","createdAt":"2026-09-28T10:00:00Z","startedAt":null,"transferable":true,"pauseable":true,"paused":false,"joinMode":"REPLACE","outputs":["kitchen"]}`
 
 	masterMuteJSON = `{"muted":false}`
 
