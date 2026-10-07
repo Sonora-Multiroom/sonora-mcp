@@ -45,7 +45,7 @@ func registerInputs(s *mcp.Server, client *http.Client, hubURL string) int {
 		Name: "listInputs",
 		Description: "List the hub's audio inputs (sources such as radio streams or line-ins). " +
 			"Only enabled inputs are returned unless includeDisabled is true. Read-only. " +
-			"Returns {\"inputs\": [...]} with each input's ID, name, URI, enabled and auto-remove flags, source (STATIC or EPHEMERAL), creation time and whether it can be paused.",
+			"Returns {\"inputs\": [...]} with each input's ID, name, URI, enabled and auto-remove flags, source (STATIC or EPHEMERAL), creation time, whether it can be paused and its default join mode (null if none).",
 		Kind: ReadOnly, Method: "GET", Path: "/api/v2/inputs",
 	}, inputSchema[listInputsIn](),
 		func(ctx context.Context, in listInputsIn) (*inputList, error) {
@@ -59,7 +59,7 @@ func registerInputs(s *mcp.Server, client *http.Client, hubURL string) int {
 	add(s, toolSpec{
 		Name: "getInput",
 		Description: "Get one audio input by ID. Read-only. " +
-			"Returns the input's ID, name, URI, enabled and auto-remove flags, source, creation time and whether it can be paused; fails with NotFound if there is no such input.",
+			"Returns the input's ID, name, URI, enabled and auto-remove flags, source, creation time, whether it can be paused and its default join mode (null if none); fails with NotFound if there is no such input.",
 		Kind: ReadOnly, Method: "GET", Path: "/api/v2/inputs/{inputId}",
 	}, inputSchema[inputIDIn](withMinLength("inputId", 1)),
 		func(ctx context.Context, in inputIDIn) (*hub.Input, error) {
@@ -69,7 +69,7 @@ func registerInputs(s *mcp.Server, client *http.Client, hubURL string) int {
 	add(s, toolSpec{
 		Name: "setInputEnabled",
 		Description: "Enable or disable one audio input; a disabled input is hidden from listInputs by default and cannot be played. Idempotent. " +
-			"Returns the updated input (ID, name, URI, enabled and auto-remove flags, source, creation time, pauseable); fails with NotFound if there is no such input.",
+			"Returns the updated input (ID, name, URI, enabled and auto-remove flags, source, creation time, pauseable, default join mode); fails with NotFound if there is no such input.",
 		Kind: Idempotent, Method: "PUT", Path: "/api/v2/inputs/{inputId}/enabled",
 	}, inputSchema[inputEnabledIn](withMinLength("inputId", 1)),
 		func(ctx context.Context, in inputEnabledIn) (*hub.Input, error) {
@@ -79,7 +79,7 @@ func registerInputs(s *mcp.Server, client *http.Client, hubURL string) int {
 	add(s, toolSpec{
 		Name: "createInput",
 		Description: "Register a new ephemeral audio input (a stream or file URI) on the hub so it can be routed to outputs. Changes state. " +
-			"Returns the new input (ID, name, URI, enabled and auto-remove flags, source, creation time, pauseable); fails with Validation if the ID is taken or the request is invalid.",
+			"Returns the new input (ID, name, URI, enabled and auto-remove flags, source, creation time, pauseable, default join mode); fails with Conflict if the ID is taken and Validation if the request is invalid.",
 		Kind: StateChanging, Method: "POST", Path: "/api/v2/inputs",
 	}, inputSchema[createInputIn](
 		withMinLength("inputId", 1), withPattern("inputId", `^[a-zA-Z0-9\-_]{1,255}$`),

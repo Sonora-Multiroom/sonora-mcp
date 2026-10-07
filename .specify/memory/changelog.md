@@ -2,6 +2,18 @@
 
 ## Merged Features Log
 
+### Conflict category for the hub's 409 refusals — 2026-10-07
+**Branch:** conflict-category
+**Spec:** [specs/tiny/conflict-category.md](../../specs/tiny/conflict-category.md)
+
+- sonora-cli v0.1.1 → v0.1.3: 409s on `createRoute`, `transferRoute`, `playback` and `createInput`
+  are decoded with the hub's detail and reason (v0.1.2), and `hub.Input` gains `defaultJoinMode`
+  (v0.1.3, PR #22, found by the conformance test).
+- New error category `Conflict`, e.g. `Conflict: Output 'bathroom' is disabled (OUTPUT_DISABLED)`;
+  a duplicate input ID is now `Conflict` instead of `HubError`.
+- Route results include `joinMode` and `outputs`, input results `defaultJoinMode`; transfer keeps
+  the route ID (hub 0.1.22).
+
 ### Rewrite sonora-mcp on the Shared Hub Client — archived 2026-09-28
 **Branch:** 001-go-rewrite
 **Spec:** [specs/001-go-rewrite/spec.md](../archive/001-go-rewrite/spec.md) (folder moved to `.specify/archive/001-go-rewrite/`)

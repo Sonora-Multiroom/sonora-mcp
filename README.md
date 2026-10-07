@@ -186,6 +186,7 @@ A failed call returns an error result whose text starts with a category:
 |---|---|
 | `NotFound` | The input, output, group, route or target doesn't exist |
 | `Validation` | The hub rejected the request (the hub's explanation is included) |
+| `Conflict` | The hub refused the request in its current state, for example a disabled speaker; the hub's reason follows in parentheses. Change that state and retry |
 | `RouteFailed` | The hub could not create the route |
 | `SourceUnreachable` | The hub could not reach the audio source |
 | `ServiceUnavailable` | The hub is temporarily unavailable |

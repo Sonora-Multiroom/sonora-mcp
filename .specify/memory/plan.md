@@ -211,6 +211,7 @@ call made).
 |---|---|
 | `NotFound` | The input/output/group/route (or a target) doesn't exist |
 | `Validation` | The hub rejected the request as invalid (includes the hub's explanation) |
+| `Conflict` | The hub refused the request in its current state (409); the hub's `reason`, if any, follows in parentheses |
 | `RouteFailed` | The hub could not create the route (422) |
 | `SourceUnreachable` | The hub could not reach the audio source (502) |
 | `ServiceUnavailable` | The hub's service is temporarily unavailable (503) |
@@ -337,11 +338,11 @@ outbound internet access to GitHub; the running server does not.
   true`, text `"<Category>: <message>"`, no `structuredContent` or `_meta`. Category mapping:
   `*hub.DecodeError` → `MalformedResponse`; `context.DeadlineExceeded` or a timing-out `net.Error`
   → `Timeout`; then `ClassNotFound`/`ClassInputNotFound`/`ClassTargetNotFound` → `NotFound`,
-  `ClassValidation` → `Validation`, `ClassRouteFailed` → `RouteFailed`, `ClassSourceUnreachable`
+  `ClassValidation` → `Validation`, `ClassConflict` → `Conflict`, `ClassRouteFailed` → `RouteFailed`, `ClassSourceUnreachable`
   → `SourceUnreachable`, `ClassServiceUnavailable` → `ServiceUnavailable`, `ClassNetwork` →
   `Network`, `ClassHub` → `HubError`; panics → `Internal`; schema failures logged as
   `InvalidInput`. `ClassifyError`'s message carries the hub's problem `detail`/`title` for
-  400/422, and the typed error's text otherwise. [Source: specs/001-go-rewrite/research.md -> R5]
+  400/409/422 (a 409's `reason` is appended as ` (<REASON>)`), and the typed error's text otherwise. [Source: specs/001-go-rewrite/research.md -> R5]
 - **Transport**: `mcp.NewStreamableHTTPHandler` with `Stateless: true` and
   `PropagateRequestCancellation: true` at `/mcp`, one shared `*mcp.Server`. SDK localhost
   protection kept on. No CORS headers (browser clients are not a target).

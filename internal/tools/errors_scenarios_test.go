@@ -31,6 +31,52 @@ func TestErrorValidationKeepsHubDetail(t *testing.T) {
 	}
 }
 
+func TestErrorConflictNamesReason(t *testing.T) {
+	hub := newFakeHub(t)
+	hub.handle("POST", "/api/v2/routes", http.StatusConflict,
+		`{"type":"urn:multiroom:error:route-admission","title":"Route not admitted","status":409,"detail":"Output 'bathroom' is disabled","reason":"OUTPUT_DISABLED","outputId":"bathroom"}`)
+	s := newTestSession(t, hub.URL, nil)
+
+	res := callTool(t, s, "createRoute", map[string]any{"inputId": "radio-1", "targetId": "bathroom", "targetType": "SINGLE_OUTPUT"})
+	if got, want := errorText(res), "Conflict: Output 'bathroom' is disabled (OUTPUT_DISABLED)"; got != want {
+		t.Errorf("error = %q, want %q", got, want)
+	}
+}
+
+func TestErrorConflictOnPlaybackAndTransfer(t *testing.T) {
+	const refusal = `{"type":"urn:multiroom:error:route-admission","title":"Route not admitted","status":409,"detail":"Group 'downstairs' is disabled","reason":"GROUP_DISABLED"}`
+	hub := newFakeHub(t)
+	hub.handle("POST", "/api/v2/play", http.StatusConflict, refusal)
+	hub.handle("POST", "/api/v2/routes/r-1/transfer", http.StatusConflict, refusal)
+	s := newTestSession(t, hub.URL, nil)
+
+	const want = "Conflict: Group 'downstairs' is disabled (GROUP_DISABLED)"
+	if got := errorText(callTool(t, s, "playback", map[string]any{
+		"uri": "http://radio.example/stream", "targetId": "downstairs", "targetType": "OUTPUT_GROUP",
+	})); got != want {
+		t.Errorf("playback error = %q, want %q", got, want)
+	}
+	if got := errorText(callTool(t, s, "transferRoute", map[string]any{
+		"routeId": "r-1", "targetId": "downstairs", "targetType": "OUTPUT_GROUP",
+	})); got != want {
+		t.Errorf("transferRoute error = %q, want %q", got, want)
+	}
+}
+
+func TestErrorConflictDuplicateInput(t *testing.T) {
+	hub := newFakeHub(t)
+	hub.handle("POST", "/api/v2/inputs", http.StatusConflict,
+		`{"type":"urn:multiroom:error:conflict","title":"Conflict","status":409,"detail":"Input ID already exists"}`)
+	s := newTestSession(t, hub.URL, nil)
+
+	res := callTool(t, s, "createInput", map[string]any{
+		"inputId": "radio-1", "displayName": "Radio", "uri": "http://radio.example/stream",
+	})
+	if got, want := errorText(res), "Conflict: Input ID already exists"; got != want {
+		t.Errorf("error = %q, want %q", got, want)
+	}
+}
+
 func TestErrorServiceUnavailable(t *testing.T) {
 	hub := newFakeHub(t)
 	hub.handle("POST", "/api/v2/play", http.StatusServiceUnavailable,

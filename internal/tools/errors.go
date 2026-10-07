@@ -15,6 +15,7 @@ const (
 	CategoryNotFound           = "NotFound"
 	CategoryValidation         = "Validation"
 	CategoryRouteFailed        = "RouteFailed"
+	CategoryConflict           = "Conflict"
 	CategorySourceUnreachable  = "SourceUnreachable"
 	CategoryServiceUnavailable = "ServiceUnavailable"
 	CategoryNetwork            = "Network"
@@ -65,6 +66,11 @@ func classify(err error) (category, message string) {
 	if errors.As(err, &apiErr) && apiErr.Detail != "" && message != apiErr.Detail {
 		message += ": " + apiErr.Detail
 	}
+	// Name why the hub refused a route, so the agent knows which state to
+	// change; an unknown reason is passed through as is.
+	if apiErr != nil && apiErr.Reason != "" {
+		message += " (" + apiErr.Reason + ")"
+	}
 
 	switch class {
 	case hub.ClassNotFound, hub.ClassInputNotFound, hub.ClassTargetNotFound:
@@ -73,6 +79,8 @@ func classify(err error) (category, message string) {
 		return CategoryValidation, message
 	case hub.ClassRouteFailed:
 		return CategoryRouteFailed, message
+	case hub.ClassConflict:
+		return CategoryConflict, message
 	case hub.ClassSourceUnreachable:
 		return CategorySourceUnreachable, message
 	case hub.ClassServiceUnavailable:
