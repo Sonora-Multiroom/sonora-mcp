@@ -462,7 +462,7 @@ start → parse config ─invalid→ exit 2
 
 - **AS-001**: The implementation language is Go and the hub client is sonora-cli's public `hub`
   package with its embedded API specification, as decided in
-  `docs/future/go-rewrite-shared-hub-client.md` and required by the constitution (Principle I).
+  `docs/archive/go-rewrite-shared-hub-client.md` and required by the constitution (Principle I).
   [Source: specs/001-go-rewrite/spec.md -> "The implementation language is Go"]
 - **AS-002**: sonora-cli's `hub` package (PR #19, branch `010-public-hub-package`) already covers
   all 24 operations and its response types carry every field the specification defines for them

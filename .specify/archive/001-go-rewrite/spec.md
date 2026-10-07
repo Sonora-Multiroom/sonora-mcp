@@ -6,7 +6,7 @@
 
 **Status**: Completed
 
-**Input**: User description: "@docs/future/go-rewrite-shared-hub-client.md" — phase 3.2 of that plan:
+**Input**: User description: "@docs/archive/go-rewrite-shared-hub-client.md" — phase 3.2 of that plan:
 replace the Node.js/TypeScript MCP server with a Go implementation built on sonora-cli's public
 `hub` package, keeping the same tools, flags and endpoints, then remove the Node.js code.
 
@@ -399,7 +399,7 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
 
 - The implementation language is Go and the hub client is sonora-cli's public `hub` package
   with its embedded API specification, as decided in
-  `docs/future/go-rewrite-shared-hub-client.md` and required by the constitution (Principle I).
+  `docs/archive/go-rewrite-shared-hub-client.md` and required by the constitution (Principle I).
 - sonora-cli's `hub` package (PR #19, branch `010-public-hub-package`) already covers all 24
   operations and its response types carry every field the specification defines for them (checked for
   outputs and routes on 2026-09-27; the conformance test covers the rest). Development uses a
