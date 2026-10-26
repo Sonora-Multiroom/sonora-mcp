@@ -92,5 +92,15 @@ func registerOutputs(s *mcp.Server, client *http.Client, hubURL string) int {
 			return hub.SetOutputEnabled(ctx, client, hubURL, in.OutputID, in.Enabled)
 		})
 
-	return 5
+	add(s, toolSpec{
+		Name: "stopRoutesForOutput",
+		Description: "Stop everything playing on one audio output: the routes addressed to it and every group route whose group includes it. Destructive: a group route stops on the group's other outputs too, not only on this one, and each stopped route must be created again to resume. Idempotent. " +
+			"Returns {\"stoppedCount\": n, \"stoppedRoutes\": [...]} with each stopped route's ID, target and target type and stop reason; nothing playing is a success with stoppedCount 0. Fails with NotFound if there is no such output.",
+		Kind: Destructive, Method: "DELETE", Path: "/api/v2/outputs/{outputId}/routes",
+	}, inputSchema[outputIDIn](withMinLength("outputId", 1)),
+		func(ctx context.Context, in outputIDIn) (*hub.BulkStopResponse, error) {
+			return hub.StopRoutesForOutput(ctx, client, hubURL, in.OutputID)
+		})
+
+	return 6
 }

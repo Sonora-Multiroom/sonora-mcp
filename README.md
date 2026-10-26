@@ -1,6 +1,6 @@
 # sonora-mcp
 
-MCP server for the Sonora Multiroom audio system. It exposes the Multiroom Audio Hub API as 25 MCP
+MCP server for the Sonora Multiroom audio system. It exposes the Multiroom Audio Hub API as 28 MCP
 tools, so any AI assistant that supports MCP can list and control your speakers, groups, inputs
 and routes over a URL.
 
@@ -124,7 +124,7 @@ npx @modelcontextprotocol/inspector
 
 Connect to `http://localhost:3001/mcp` with the Streamable HTTP transport.
 
-## Tools (25)
+## Tools (28)
 
 Every tool returns structured content (and the same JSON as text). Lists are wrapped in an object,
 such as `{"outputs": [...]}`.
@@ -148,6 +148,7 @@ such as `{"outputs": [...]}`.
 | `setOutputVolume` | Set an output's volume (0–100) |
 | `setOutputMute` | Mute or unmute an output |
 | `setOutputEnabled` | Enable or disable an output |
+| `stopRoutesForOutput` | Stop everything playing on an output, including group routes that include it |
 
 ### Groups
 
@@ -158,6 +159,7 @@ such as `{"outputs": [...]}`.
 | `setGroupVolume` | Set the volume of every output in a group (0–100) |
 | `setGroupMute` | Mute or unmute a group |
 | `setGroupEnabled` | Enable or disable a group |
+| `stopRoutesForGroup` | Stop everything playing in a group and on its members |
 
 ### Routes
 
@@ -170,6 +172,7 @@ such as `{"outputs": [...]}`.
 | `transferRoute` | Move a route to another output or group |
 | `setRoutePause` | Pause or resume a route (pauseable inputs only) |
 | `setRouteVolume` | Change a route's own volume (0–100) without touching any output's volume |
+| `stopAllRoutes` | Stop every route on every speaker; only for "stop everything" |
 
 ### Playback and master mute
 

@@ -145,5 +145,15 @@ func registerRoutes(s *mcp.Server, client *http.Client, hubURL string) int {
 			return &routeDeleted{Deleted: true, RouteID: in.RouteID}, nil
 		})
 
-	return 7
+	add(s, toolSpec{
+		Name: "stopAllRoutes",
+		Description: "Stop every active route on every speaker in the house. Destructive: use it only when asked to stop everything; to stop one room use stopRoutesForOutput, one group stopRoutesForGroup, one playback deleteRoute. Stopped routes must be created again to resume. Idempotent. " +
+			"Returns {\"stoppedCount\": n, \"stoppedRoutes\": [...]} with each stopped route's ID, target and target type; nothing playing is a success with stoppedCount 0.",
+		Kind: Destructive, Method: "DELETE", Path: "/api/v2/routes",
+	}, inputSchema[struct{}](),
+		func(ctx context.Context, _ struct{}) (*hub.BulkStopResponse, error) {
+			return hub.StopAllRoutes(ctx, client, hubURL)
+		})
+
+	return 8
 }

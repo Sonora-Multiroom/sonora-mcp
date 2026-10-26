@@ -124,3 +124,22 @@ func TestDeleteRouteRejectsEmptyID(t *testing.T) {
 	expectInvalidInput(t, callTool(t, s, "deleteRoute", map[string]any{"routeId": ""}))
 	hub.assertNoRequests(t)
 }
+
+func TestStopAllRoutes(t *testing.T) {
+	hub := newFakeHub(t)
+	hub.handle("DELETE", "/api/v2/routes", http.StatusOK, bulkStopJSON)
+	s := newTestSession(t, hub.URL, nil)
+
+	res := callTool(t, s, "stopAllRoutes", map[string]any{})
+	expectRequest(t, hub, "DELETE", "/api/v2/routes", "", "")
+	expectStructured(t, res, bulkStopJSON)
+	expectAnnotations(t, s, "stopAllRoutes", Destructive)
+}
+
+func TestStopAllRoutesNothingPlaying(t *testing.T) {
+	hub := newFakeHub(t)
+	hub.handle("DELETE", "/api/v2/routes", http.StatusOK, `{"stoppedCount":0,"stoppedRoutes":[]}`)
+	s := newTestSession(t, hub.URL, nil)
+
+	expectStructured(t, callTool(t, s, "stopAllRoutes", map[string]any{}), `{"stoppedCount":0,"stoppedRoutes":[]}`)
+}

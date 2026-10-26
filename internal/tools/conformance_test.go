@@ -267,14 +267,14 @@ func TestRegisterCount(t *testing.T) {
 	}
 }
 
-// contractTools are the 25 tool names in contracts/tools.md, the
+// contractTools are the 28 tool names in contracts/tools.md, the
 // compatibility contract with the Node.js server (FR-001).
 var contractTools = []string{
 	"listInputs", "getInput", "createInput", "deleteInput", "setInputEnabled",
 	"listOutputs", "getOutput", "setOutputVolume", "setOutputMute", "setOutputEnabled",
 	"listGroups", "getGroup", "setGroupVolume", "setGroupMute", "setGroupEnabled",
 	"listRoutes", "getRoute", "createRoute", "deleteRoute", "transferRoute", "setRoutePause",
-	"setRouteVolume",
+	"setRouteVolume", "stopRoutesForOutput", "stopRoutesForGroup", "stopAllRoutes",
 	"playback", "getMasterMute", "setMasterMute",
 }
 
