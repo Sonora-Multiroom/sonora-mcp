@@ -26,10 +26,10 @@ func TestPlaybackSendsGivenOptions(t *testing.T) {
 
 	res := callTool(t, s, "playback", map[string]any{
 		"uri": "http://radio.example/stream", "targetId": "downstairs", "targetType": "OUTPUT_GROUP",
-		"displayName": "Morning radio", "volume": 0,
+		"displayName": "Morning radio", "volume": 0, "routeVolume": 25,
 	})
 	expectRequest(t, hub, "POST", "/api/v2/play", "",
-		`{"uri":"http://radio.example/stream","targetId":"downstairs","targetType":"OUTPUT_GROUP","displayName":"Morning radio","outputVolume":0}`)
+		`{"uri":"http://radio.example/stream","targetId":"downstairs","targetType":"OUTPUT_GROUP","displayName":"Morning radio","outputVolume":0,"routeVolume":25}`)
 	expectOK(t, res)
 }
 
@@ -39,6 +39,16 @@ func TestPlaybackRejectsOutOfRangeVolume(t *testing.T) {
 
 	expectInvalidInput(t, callTool(t, s, "playback", map[string]any{
 		"uri": "http://radio.example/stream", "targetId": "kitchen", "targetType": "SINGLE_OUTPUT", "volume": 101,
+	}))
+	hub.assertNoRequests(t)
+}
+
+func TestPlaybackRejectsOutOfRangeRouteVolume(t *testing.T) {
+	hub := newFakeHub(t)
+	s := newTestSession(t, hub.URL, nil)
+
+	expectInvalidInput(t, callTool(t, s, "playback", map[string]any{
+		"uri": "http://radio.example/stream", "targetId": "kitchen", "targetType": "SINGLE_OUTPUT", "routeVolume": -1,
 	}))
 	hub.assertNoRequests(t)
 }

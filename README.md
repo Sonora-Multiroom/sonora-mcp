@@ -1,6 +1,6 @@
 # sonora-mcp
 
-MCP server for the Sonora Multiroom audio system. It exposes the Multiroom Audio Hub API as 24 MCP
+MCP server for the Sonora Multiroom audio system. It exposes the Multiroom Audio Hub API as 25 MCP
 tools, so any AI assistant that supports MCP can list and control your speakers, groups, inputs
 and routes over a URL.
 
@@ -124,7 +124,7 @@ npx @modelcontextprotocol/inspector
 
 Connect to `http://localhost:3001/mcp` with the Streamable HTTP transport.
 
-## Tools (24)
+## Tools (25)
 
 Every tool returns structured content (and the same JSON as text). Lists are wrapped in an object,
 such as `{"outputs": [...]}`.
@@ -135,7 +135,7 @@ such as `{"outputs": [...]}`.
 |---|---|
 | `listInputs` | List audio inputs (`includeDisabled` to include disabled ones) |
 | `getInput` | Get one input by ID |
-| `createInput` | Register a new ephemeral input from a stream or file URI |
+| `createInput` | Register a new ephemeral input from a stream or file URI (`defaultRouteVolume` for its routes) |
 | `deleteInput` | Delete an ephemeral input (static inputs can't be deleted) |
 | `setInputEnabled` | Enable or disable an input |
 
@@ -165,16 +165,17 @@ such as `{"outputs": [...]}`.
 |---|---|
 | `listRoutes` | List routes, optionally filtered by `status`, `inputId` and `targetId` |
 | `getRoute` | Get one route by ID |
-| `createRoute` | Play an input to an output or group |
+| `createRoute` | Play an input to an output or group (`routeVolume` for this route only) |
 | `deleteRoute` | Stop and delete a route |
 | `transferRoute` | Move a route to another output or group |
 | `setRoutePause` | Pause or resume a route (pauseable inputs only) |
+| `setRouteVolume` | Change a route's own volume (0–100) without touching any output's volume |
 
 ### Playback and master mute
 
 | Tool | Description |
 |---|---|
-| `playback` | Play a URI on an output or group in one step (creates the input and route) |
+| `playback` | Play a URI on an output or group in one step (creates the input and route; `routeVolume` for this playback only) |
 | `getMasterMute` | Get the system-wide master mute state |
 | `setMasterMute` | Turn the system-wide master mute on or off |
 

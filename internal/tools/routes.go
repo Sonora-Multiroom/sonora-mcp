@@ -25,9 +25,10 @@ type routeIDIn struct {
 var targetTypes = []string{"SINGLE_OUTPUT", "OUTPUT_GROUP"}
 
 type createRouteIn struct {
-	InputID    string `json:"inputId" jsonschema:"ID of the input to play, as returned by listInputs"`
-	TargetID   string `json:"targetId" jsonschema:"ID of the output or group to play to"`
-	TargetType string `json:"targetType" jsonschema:"SINGLE_OUTPUT if targetId is an output, OUTPUT_GROUP if it is a group"`
+	InputID     string `json:"inputId" jsonschema:"ID of the input to play, as returned by listInputs"`
+	TargetID    string `json:"targetId" jsonschema:"ID of the output or group to play to"`
+	TargetType  string `json:"targetType" jsonschema:"SINGLE_OUTPUT if targetId is an output, OUTPUT_GROUP if it is a group"`
+	RouteVolume *int   `json:"routeVolume,omitempty" jsonschema:"Volume of this playback only, an integer from 0 to 100; the room's volume is not changed and its volume control does not reach this playback, while mute, master mute and each output's gain still apply; use it for announcements and alerts; when omitted the input's default route volume applies, else the room's volume"`
 }
 
 type transferRouteIn struct {
@@ -39,6 +40,11 @@ type transferRouteIn struct {
 type routePauseIn struct {
 	RouteID string `json:"routeId" jsonschema:"Unique route identifier, as returned by listRoutes"`
 	Paused  bool   `json:"paused" jsonschema:"true to pause playback, false to resume it"`
+}
+
+type routeVolumeIn struct {
+	RouteID string `json:"routeId" jsonschema:"Unique route identifier, as returned by listRoutes"`
+	Volume  int    `json:"volume" jsonschema:"The route's own volume, an integer from 0 to 100"`
 }
 
 // routeDeleted confirms a deleted route; the hub answers 204 with no body.
@@ -84,10 +90,12 @@ func registerRoutes(s *mcp.Server, client *http.Client, hubURL string) int {
 			"Returns the new route (ID, input, target and target type, status, creation and start times, whether it can be transferred or paused and is paused, join mode, current outputs); " +
 			"fails with NotFound if the input or target does not exist, Conflict if the hub refuses the route in its current state (the reason in parentheses says why: a disabled input, output or group, the route limit, or the input already playing there; change that state and retry), and RouteFailed if the hub cannot start playback.",
 		Kind: StateChanging, Method: "POST", Path: "/api/v2/routes",
-	}, inputSchema[createRouteIn](withMinLength("inputId", 1), withMinLength("targetId", 1), withEnum("targetType", targetTypes...)),
+	}, inputSchema[createRouteIn](withMinLength("inputId", 1), withMinLength("targetId", 1), withEnum("targetType", targetTypes...),
+		withRange("routeVolume", 0, 100)),
 		func(ctx context.Context, in createRouteIn) (*hub.Route, error) {
 			return hub.CreateRoute(ctx, client, hubURL, hub.CreateRouteRequest{
 				InputID: in.InputID, TargetID: in.TargetID, TargetType: in.TargetType,
+				RouteVolume: in.RouteVolume,
 			})
 		})
 
@@ -114,6 +122,17 @@ func registerRoutes(s *mcp.Server, client *http.Client, hubURL string) int {
 		})
 
 	add(s, toolSpec{
+		Name: "setRouteVolume",
+		Description: "Set a playing route's own volume, for example to make an announcement louder or quieter while it plays. Idempotent. " +
+			"Changes only this route: no output's or group's volume changes, and other routes on the same outputs are unaffected. It also works on a route started without a route volume, which then stops following the room's volume. " +
+			"A route volume can be changed but never cleared. Returns the updated route; fails with NotFound if there is no such route.",
+		Kind: Idempotent, Method: "PUT", Path: "/api/v2/routes/{routeId}/volume",
+	}, inputSchema[routeVolumeIn](withMinLength("routeId", 1), withRange("volume", 0, 100)),
+		func(ctx context.Context, in routeVolumeIn) (*hub.Route, error) {
+			return hub.SetRouteVolume(ctx, client, hubURL, in.RouteID, in.Volume)
+		})
+
+	add(s, toolSpec{
 		Name: "deleteRoute",
 		Description: "Stop playback by deleting a route. Destructive: the route is gone and must be created again to resume. " +
 			"Returns {\"deleted\": true, \"routeId\": \"<id>\"}; fails with NotFound if there is no such route.",
@@ -126,5 +145,5 @@ func registerRoutes(s *mcp.Server, client *http.Client, hubURL string) int {
 			return &routeDeleted{Deleted: true, RouteID: in.RouteID}, nil
 		})
 
-	return 6
+	return 7
 }

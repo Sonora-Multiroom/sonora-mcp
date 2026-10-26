@@ -22,11 +22,12 @@ type inputEnabledIn struct {
 }
 
 type createInputIn struct {
-	InputID     string `json:"inputId" jsonschema:"ID for the new input: 1-255 letters, digits, hyphens or underscores"`
-	DisplayName string `json:"displayName" jsonschema:"Human-readable name for the input"`
-	URI         string `json:"uri" jsonschema:"Stream or file URI the input plays, e.g. an http(s) URL"`
-	Enabled     *bool  `json:"enabled,omitempty" jsonschema:"Whether the input starts enabled; the hub's default applies when omitted"`
-	AutoRemove  *bool  `json:"autoRemove,omitempty" jsonschema:"Whether the hub removes the input once its routes end; the hub's default applies when omitted"`
+	InputID            string `json:"inputId" jsonschema:"ID for the new input: 1-255 letters, digits, hyphens or underscores"`
+	DisplayName        string `json:"displayName" jsonschema:"Human-readable name for the input"`
+	URI                string `json:"uri" jsonschema:"Stream or file URI the input plays, e.g. an http(s) URL"`
+	Enabled            *bool  `json:"enabled,omitempty" jsonschema:"Whether the input starts enabled; the hub's default applies when omitted"`
+	AutoRemove         *bool  `json:"autoRemove,omitempty" jsonschema:"Whether the hub removes the input once its routes end; the hub's default applies when omitted"`
+	DefaultRouteVolume *int   `json:"defaultRouteVolume,omitempty" jsonschema:"Route volume, an integer from 0 to 100, for routes from this input that do not set their own; when omitted such routes follow the room's volume"`
 }
 
 // inputDeleted confirms a deleted input; the hub answers 204 with no body.
@@ -83,11 +84,11 @@ func registerInputs(s *mcp.Server, client *http.Client, hubURL string) int {
 		Kind: StateChanging, Method: "POST", Path: "/api/v2/inputs",
 	}, inputSchema[createInputIn](
 		withMinLength("inputId", 1), withPattern("inputId", `^[a-zA-Z0-9\-_]{1,255}$`),
-		withMinLength("displayName", 1), withMinLength("uri", 1)),
+		withMinLength("displayName", 1), withMinLength("uri", 1), withRange("defaultRouteVolume", 0, 100)),
 		func(ctx context.Context, in createInputIn) (*hub.Input, error) {
 			return hub.CreateInput(ctx, client, hubURL, hub.CreateInputRequest{
 				InputID: in.InputID, DisplayName: in.DisplayName, URI: in.URI,
-				Enabled: in.Enabled, AutoRemove: in.AutoRemove,
+				Enabled: in.Enabled, AutoRemove: in.AutoRemove, DefaultRouteVolume: in.DefaultRouteVolume,
 			})
 		})
 

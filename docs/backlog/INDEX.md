@@ -12,6 +12,5 @@ you add, ship or delete an item, update this list.
 
 | Priority | Item | Kind | Effort | Why this priority |
 |---|---|---|---|---|
-| P2 | [Join modes and an output's routes](join-modes.md) | Feature | Small–Medium | Every `playback` replaces what is playing, so an announcement stops the user's music instead of ducking it |
-| P3 | [Route volume and ducking level](play-route-volume.md) | Feature | Small | Lets an assistant play an alert at its own volume without changing the room, and change it while it plays |
+| P2 | [Join modes, ducking level and an output's routes](join-modes.md) | Feature | Small–Medium | Every `playback` replaces what is playing, so an announcement stops the user's music instead of ducking it |
 | P3 | [Rename an input](rename-input.md) | Feature | Small | The hub can rename inputs without interrupting them; no tool exposes it |
