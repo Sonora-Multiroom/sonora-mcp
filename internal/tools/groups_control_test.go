@@ -52,3 +52,29 @@ func TestSetGroupEnabled(t *testing.T) {
 	expectStructured(t, res, disabledGroupJSON)
 	expectAnnotations(t, s, "setGroupEnabled", Idempotent)
 }
+
+func TestStopRoutesForGroup(t *testing.T) {
+	hub := newFakeHub(t)
+	hub.handle("DELETE", "/api/v2/groups/downstairs/routes", http.StatusOK, bulkStopJSON)
+	s := newTestSession(t, hub.URL, nil)
+
+	res := callTool(t, s, "stopRoutesForGroup", map[string]any{"groupId": "downstairs"})
+	expectRequest(t, hub, "DELETE", "/api/v2/groups/downstairs/routes", "", "")
+	expectStructured(t, res, bulkStopJSON)
+	expectAnnotations(t, s, "stopRoutesForGroup", Destructive)
+}
+
+func TestStopRoutesForGroupUnknownGroup(t *testing.T) {
+	hub := newFakeHub(t)
+	s := newTestSession(t, hub.URL, nil)
+
+	expectErrorPrefix(t, callTool(t, s, "stopRoutesForGroup", map[string]any{"groupId": "nope"}), "NotFound:")
+}
+
+func TestStopRoutesForGroupRejectsEmptyID(t *testing.T) {
+	hub := newFakeHub(t)
+	s := newTestSession(t, hub.URL, nil)
+
+	expectInvalidInput(t, callTool(t, s, "stopRoutesForGroup", map[string]any{"groupId": ""}))
+	hub.assertNoRequests(t)
+}

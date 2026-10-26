@@ -109,8 +109,8 @@ func TestNewAppUsesOneVersionAndBoundedClient(t *testing.T) {
 	if a.server.ReadHeaderTimeout <= 0 {
 		t.Error("server has no ReadHeaderTimeout; slow clients could hold connections open")
 	}
-	if a.tools != 25 {
-		t.Errorf("tools registered = %d, want 25", a.tools)
+	if a.tools != 28 {
+		t.Errorf("tools registered = %d, want 28", a.tools)
 	}
 
 	ts := httptest.NewServer(a.server.Handler)

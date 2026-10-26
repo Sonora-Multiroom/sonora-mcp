@@ -92,5 +92,15 @@ func registerGroups(s *mcp.Server, client *http.Client, hubURL string) int {
 			return hub.SetGroupEnabled(ctx, client, hubURL, in.GroupID, in.Enabled)
 		})
 
-	return 5
+	add(s, toolSpec{
+		Name: "stopRoutesForGroup",
+		Description: "Stop everything playing in an output group: the routes addressed to the group and the routes addressed directly to any of its member outputs. Destructive: each stopped route must be created again to resume. Idempotent. " +
+			"Returns {\"stoppedCount\": n, \"stoppedRoutes\": [...]} with each stopped route's ID, target and target type and stop reason; nothing playing is a success with stoppedCount 0. Fails with NotFound if there is no such group.",
+		Kind: Destructive, Method: "DELETE", Path: "/api/v2/groups/{groupId}/routes",
+	}, inputSchema[groupIDIn](withMinLength("groupId", 1)),
+		func(ctx context.Context, in groupIDIn) (*hub.BulkStopResponse, error) {
+			return hub.StopRoutesForGroup(ctx, client, hubURL, in.GroupID)
+		})
+
+	return 6
 }
