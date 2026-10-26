@@ -211,7 +211,7 @@ locally and confirm the conformance test fails.
 - `playback` is called with a URI the hub cannot reach: the error says the audio source could
   not be reached. [Source: specs/001-go-rewrite/spec.md -> "`playback` is called with a URI the hub cannot reach"]
 - Optional fields (`createInput.enabled`, `createInput.autoRemove`, `playback.displayName`,
-  `playback.volume`) are omitted: the hub receives no value for them and applies its defaults,
+  `playback.volume`, sent to the hub as `outputVolume`) are omitted: the hub receives no value for them and applies its defaults,
   rather than receiving `false` or `0`. [Source: specs/001-go-rewrite/spec.md -> "Optional fields"]
 - The hub returns a body that cannot be read as the expected data (not JSON, wrong shape):
   the tool returns a malformed-response error rather than partial or invented data.
@@ -359,6 +359,21 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
 | `getMasterMute` | — | read-only |
 | `setMasterMute` | `muted` | idempotent |
 
+What the descriptions tell an agent about hub behaviour (hub 0.1.25–0.1.28)
+[Source: specs/tiny/adopt-sonora-cli-0.3.md]:
+
+- `setInputEnabled`: disabling stops every route playing the input, and an auto-remove input is
+  then removed.
+- `setOutputEnabled`: disabling takes the output out of the routes playing on it; re-enabling
+  puts it back into the live group routes on its group, under the same route ID.
+- `setGroupEnabled`: disabling stops the routes addressed to the group; direct routes on its
+  members keep playing.
+- `transferRoute`: a Conflict with reason `ROUTE_CHANGING_OUTPUTS` clears within moments and the
+  same request can be retried. The tool does not retry by itself (Principle III).
+- `playback`: `volume` sets the target's own volume, which stays after playback ends; the result
+  includes `displayName` (the name given, the resolved title of a SoundCloud or YouTube link, or a
+  generated placeholder).
+
 ### Key Entities
 
 - **Tool** (ToolDefinition, built at startup, immutable): a named action an agent can call; has a
@@ -462,7 +477,7 @@ start → parse config ─invalid→ exit 2
 
 - **AS-001**: The implementation language is Go and the hub client is sonora-cli's public `hub`
   package with its embedded API specification, as decided in
-  `docs/future/go-rewrite-shared-hub-client.md` and required by the constitution (Principle I).
+  `docs/archive/go-rewrite-shared-hub-client.md` and required by the constitution (Principle I).
   [Source: specs/001-go-rewrite/spec.md -> "The implementation language is Go"]
 - **AS-002**: sonora-cli's `hub` package (PR #19, branch `010-public-hub-package`) already covers
   all 24 operations and its response types carry every field the specification defines for them

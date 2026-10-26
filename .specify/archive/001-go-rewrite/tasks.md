@@ -63,7 +63,7 @@ written first and must fail before its implementation task starts. All tests run
 - [X] T003 [P] Create `internal/version/version.go`: package `version` with
   `var Version = "dev"` and a godoc saying it is set via
   `-ldflags "-X github.com/Sonora-Multiroom/sonora-mcp/internal/version.Version=<v>"`
-- [X] T003a [P] Commit the design note `docs/future/go-rewrite-shared-hub-client.md` on its own
+- [X] T003a [P] Commit the design note `docs/archive/go-rewrite-shared-hub-client.md` on its own
   (`docs:` commit) so the references to it from spec.md, the constitution's Sync Impact Report and
   plan decisions resolve after merge
 - [X] T003b [P] Commit `.vscode/mcp.json` on its own (`chore:` commit; it holds only

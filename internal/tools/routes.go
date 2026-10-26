@@ -94,7 +94,7 @@ func registerRoutes(s *mcp.Server, client *http.Client, hubURL string) int {
 	add(s, toolSpec{
 		Name: "transferRoute",
 		Description: "Move a playing route to a different output or group without restarting the input. Changes state. " +
-			"Returns the updated route, which keeps its ID; fails with NotFound if the route or target does not exist, Conflict if the hub refuses the new target in its current state (for example it is disabled; the reason is in parentheses), and Validation if the route cannot be transferred.",
+			"Returns the updated route, which keeps its ID; fails with NotFound if the route or target does not exist, Conflict if the hub refuses the new target in its current state (for example it is disabled; the reason is in parentheses), and Validation if the route cannot be transferred. A Conflict with reason ROUTE_CHANGING_OUTPUTS means the route is still adding an output; it clears within moments, and the same request can then be retried.",
 		Kind: StateChanging, Method: "POST", Path: "/api/v2/routes/{routeId}/transfer",
 	}, inputSchema[transferRouteIn](withMinLength("routeId", 1), withMinLength("targetId", 1), withEnum("targetType", targetTypes...)),
 		func(ctx context.Context, in transferRouteIn) (*hub.Route, error) {

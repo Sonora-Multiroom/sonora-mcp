@@ -1,6 +1,6 @@
 # Plan: Rewrite sonora-mcp in Go on a shared, public hub client
 
-- **Status**: Proposed (not started)
+- **Status**: Implemented (sonora-cli `hub/` and `api.Spec` public; sonora-mcp rewritten in Go, released as v1.1.0)
 - **Date**: 2026-09-27
 - **Repos affected**: `sonora-cli` (phases 1–2), `sonora-mcp` (phase 3)
 - **Decision**: Option 2a. Promote `sonora-cli/internal/hub` to a public package inside the
@@ -213,9 +213,9 @@ make sure the build passes with `GOWORK=off` before merging.
 
 ## Checklist
 
-- [ ] Phase 1: sonora-cli constitution amended (1.2.0)
-- [ ] Phase 2: `010-public-hub-package` specified, implemented, merged
-- [ ] Phase 2: sonora-cli release tagged with public `hub/` (and `api.Spec`)
-- [ ] Phase 3: sonora-mcp constitution rewritten for Go
-- [ ] Phase 3: `001-go-rewrite` specified, implemented, verified on the Pi
-- [ ] Phase 3: Node.js sources and tooling removed
+- [x] Phase 1: sonora-cli constitution amended (1.2.0)
+- [x] Phase 2: `010-public-hub-package` specified, implemented, merged
+- [x] Phase 2: sonora-cli release tagged with public `hub/` (and `api.Spec`)
+- [x] Phase 3: sonora-mcp constitution rewritten for Go
+- [x] Phase 3: `001-go-rewrite` specified, implemented, verified on the Pi
+- [x] Phase 3: Node.js sources and tooling removed

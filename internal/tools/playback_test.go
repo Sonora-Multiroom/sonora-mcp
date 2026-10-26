@@ -29,7 +29,7 @@ func TestPlaybackSendsGivenOptions(t *testing.T) {
 		"displayName": "Morning radio", "volume": 0,
 	})
 	expectRequest(t, hub, "POST", "/api/v2/play", "",
-		`{"uri":"http://radio.example/stream","targetId":"downstairs","targetType":"OUTPUT_GROUP","displayName":"Morning radio","volume":0}`)
+		`{"uri":"http://radio.example/stream","targetId":"downstairs","targetType":"OUTPUT_GROUP","displayName":"Morning radio","outputVolume":0}`)
 	expectOK(t, res)
 }
 

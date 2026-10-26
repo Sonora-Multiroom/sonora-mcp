@@ -2,6 +2,19 @@
 
 ## Merged Features Log
 
+### Move to sonora-cli v0.3.1 (hub API 0.1.29) — 2026-10-26
+**Branch:** adopt-sonora-cli-0.3
+**Spec:** [specs/tiny/adopt-sonora-cli-0.3.md](../../specs/tiny/adopt-sonora-cli-0.3.md)
+
+- sonora-cli v0.1.3 → v0.3.1: conformance now checks against hub API 0.1.29 instead of 0.1.22.
+- `playback.volume` keeps its name but reaches the hub as `outputVolume` (sonora-cli v0.3.0 renamed
+  `PlaybackRequest.Volume`); the input schemas are unchanged, so this is a MINOR release.
+- Descriptions say what disabling and re-enabling do to running routes (`setInputEnabled`,
+  `setOutputEnabled`, `setGroupEnabled`), that a `ROUTE_CHANGING_OUTPUTS` Conflict on
+  `transferRoute` can be retried, and that `playback` returns `displayName`.
+- Output schemas gain the hub's additive fields: `routeVolume` and `duckingLevelDb` on routes,
+  `defaultRouteVolume` and `defaultDuckingLevelDb` on inputs, `displayName` on the playback result.
+
 ### Conflict category for the hub's 409 refusals — 2026-10-07
 **Branch:** conflict-category
 **Spec:** [specs/tiny/conflict-category.md](../../specs/tiny/conflict-category.md)

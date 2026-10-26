@@ -68,7 +68,7 @@ func registerInputs(s *mcp.Server, client *http.Client, hubURL string) int {
 
 	add(s, toolSpec{
 		Name: "setInputEnabled",
-		Description: "Enable or disable one audio input; a disabled input is hidden from listInputs by default and cannot be played. Idempotent. " +
+		Description: "Enable or disable one audio input; a disabled input is hidden from listInputs by default and cannot be played. Disabling stops every route playing the input, and an auto-remove input is then removed. Idempotent. " +
 			"Returns the updated input (ID, name, URI, enabled and auto-remove flags, source, creation time, pauseable, default join mode); fails with NotFound if there is no such input.",
 		Kind: Idempotent, Method: "PUT", Path: "/api/v2/inputs/{inputId}/enabled",
 	}, inputSchema[inputEnabledIn](withMinLength("inputId", 1)),

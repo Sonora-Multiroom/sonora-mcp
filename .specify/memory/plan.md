@@ -22,7 +22,7 @@ checks every tool against the spec embedded in sonora-cli (`api.Spec`).
 
 **Primary Dependencies**: `github.com/modelcontextprotocol/go-sdk` v1.8.0 (MCP server, Streamable
 HTTP, JSON Schema via `github.com/google/jsonschema-go`); `github.com/Sonora-Multiroom/sonora-cli`
-v0.1.1 (`hub`, `api` packages); standard library otherwise (`net/http`, `flag`, `log/slog`,
+v0.3.1 (`hub`, `api` packages; `api.Spec` is hub API 0.1.29); standard library otherwise (`net/http`, `flag`, `log/slog`,
 `os/signal`) [Source: specs/001-go-rewrite/plan.md -> "Primary Dependencies"]
 [Source: specs/001-go-rewrite/tasks.md -> T073]
 
@@ -189,7 +189,7 @@ change without a MAJOR version (Principle II). `?` = optional. `TargetType` = `S
 | `deleteRoute` | `DELETE /api/v2/routes/{routeId}` | `routeId` | destructive | `{"deleted": true, "routeId"}` |
 | `transferRoute` | `POST /api/v2/routes/{routeId}/transfer` | `routeId`, `targetId`, `targetType: TargetType` | state-changing | `Route` |
 | `setRoutePause` | `PUT /api/v2/routes/{routeId}/pause` | `routeId`, `paused: bool` | idempotent | `Route` |
-| `playback` | `POST /api/v2/play` | `uri`, `targetId`, `targetType: TargetType`, `displayName?`, `volume?: Volume` | state-changing | `PlaybackResponse` (`inputId`, `route`, `message`) |
+| `playback` | `POST /api/v2/play` | `uri`, `targetId`, `targetType: TargetType`, `displayName?`, `volume?: Volume` (sent as `outputVolume`) | state-changing | `PlaybackResponse` (`inputId`, `displayName`, `route`, `message`) |
 | `getMasterMute` | `GET /api/v2/master-mute` | — | read-only | `MasterMute` |
 | `setMasterMute` | `PUT /api/v2/master-mute` | `muted: bool` | idempotent | `MasterMute` |
 
