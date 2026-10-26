@@ -84,7 +84,7 @@ func registerGroups(s *mcp.Server, client *http.Client, hubURL string) int {
 
 	add(s, toolSpec{
 		Name: "setGroupEnabled",
-		Description: "Enable or disable an output group; a disabled group is hidden from listGroups by default and cannot play. Idempotent. " +
+		Description: "Enable or disable an output group; a disabled group is hidden from listGroups by default and cannot play. Disabling stops the routes addressed to the group; direct routes on its member outputs keep playing. Idempotent. " +
 			"Returns the updated group (ID, name, member output IDs, mute state, enabled flag); fails with NotFound if there is no such group.",
 		Kind: Idempotent, Method: "PUT", Path: "/api/v2/groups/{groupId}/enabled",
 	}, inputSchema[groupEnabledIn](withMinLength("groupId", 1)),

@@ -84,7 +84,7 @@ func registerOutputs(s *mcp.Server, client *http.Client, hubURL string) int {
 
 	add(s, toolSpec{
 		Name: "setOutputEnabled",
-		Description: "Enable or disable one audio output; a disabled output is hidden from listOutputs by default and cannot play. Idempotent. " +
+		Description: "Enable or disable one audio output; a disabled output is hidden from listOutputs by default and cannot play. Disabling takes the output out of the routes playing on it; re-enabling puts it back into the live group routes on its group, under the same route IDs. Idempotent. " +
 			"Returns the updated output (ID, name, volume, mute state, availability, enabled flag); fails with NotFound if there is no such output.",
 		Kind: Idempotent, Method: "PUT", Path: "/api/v2/outputs/{outputId}/enabled",
 	}, inputSchema[outputEnabledIn](withMinLength("outputId", 1)),
