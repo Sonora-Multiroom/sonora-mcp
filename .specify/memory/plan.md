@@ -6,7 +6,7 @@
 
 ## Summary
 
-sonora-mcp is a Go MCP server that exposes 25 tools and delegates every hub call to sonora-cli's
+sonora-mcp is a Go MCP server that exposes 28 tools and delegates every hub call to sonora-cli's
 public `hub` package. It adds an error category on every failure, returns results as structured
 content plus JSON text, has a `--host` flag and a hub reachability field in `/health`, shuts down
 cleanly, and ships a systemd unit inside an install script for the Pi. Tools use the MCP Go SDK's
@@ -46,7 +46,7 @@ bound 10 s) [Source: specs/001-go-rewrite/plan.md -> "Performance Goals"]
 the request context and a timeout; LAN-only, unauthenticated; tool names and inputs unchanged
 [Source: specs/001-go-rewrite/plan.md -> "Constraints"]
 
-**Scale/Scope**: 25 tools, one household, a handful of concurrent agents; ~1–1.5k lines of Go plus
+**Scale/Scope**: 28 tools, one household, a handful of concurrent agents; ~1–1.5k lines of Go plus
 tests, one systemd unit, one install script [Source: specs/001-go-rewrite/plan.md -> "Scale/Scope"]
 
 ## Project Structure
@@ -73,11 +73,11 @@ internal/
 │   ├── errors.go              # hub error → category, error result builder
 │   ├── schema.go              # constraint helpers (range, enum, minLength, pattern)
 │   ├── inputs.go              # listInputs, getInput, createInput, deleteInput, setInputEnabled
-│   ├── outputs.go             # listOutputs, getOutput, setOutputVolume, setOutputMute, setOutputEnabled
-│   ├── groups.go              # listGroups, getGroup, setGroupVolume, setGroupMute, setGroupEnabled
-│   ├── routes.go              # listRoutes, getRoute, createRoute, deleteRoute, transferRoute, setRoutePause, setRouteVolume
+│   ├── outputs.go             # listOutputs, getOutput, setOutputVolume, setOutputMute, setOutputEnabled, stopRoutesForOutput
+│   ├── groups.go              # listGroups, getGroup, setGroupVolume, setGroupMute, setGroupEnabled, stopRoutesForGroup
+│   ├── routes.go              # listRoutes, getRoute, createRoute, deleteRoute, transferRoute, setRoutePause, setRouteVolume, stopAllRoutes
 │   ├── playback.go            # playback, getMasterMute, setMasterMute
-│   ├── tools.go               # Register(server, hubClient, hubURL): all 25 (logging is middleware)
+│   ├── tools.go               # Register(server, hubClient, hubURL): all 28 (logging is middleware)
 │   ├── fakehub_test.go        # httptest fake hub recording requests, canned responses
 │   ├── harness_test.go        # in-memory MCP client session + callTool/toolByName helpers
 │   ├── *_test.go              # per-file tool tests through an in-memory MCP client
@@ -178,11 +178,13 @@ change without a MAJOR version (Principle II); new tools and optional fields are
 | `setOutputVolume` | `PUT /api/v2/outputs/{outputId}/volume` | `outputId`, `volume: Volume` | idempotent | `OutputVolume` |
 | `setOutputMute` | `PUT /api/v2/outputs/{outputId}/mute` | `outputId`, `muted: bool` | idempotent | `OutputMute` |
 | `setOutputEnabled` | `PUT /api/v2/outputs/{outputId}/enabled` | `outputId`, `enabled: bool` | idempotent | `Output` |
+| `stopRoutesForOutput` | `DELETE /api/v2/outputs/{outputId}/routes` | `outputId` | destructive | `BulkStopResponse` (`stoppedCount`, `stoppedRoutes`) |
 | `listGroups` | `GET /api/v2/groups` | `includeDisabled?: bool` | read-only | `{"groups": [Group]}` |
 | `getGroup` | `GET /api/v2/groups/{groupId}` | `groupId` | read-only | `Group` |
 | `setGroupVolume` | `PUT /api/v2/groups/{groupId}/volume` | `groupId`, `volume: Volume` | idempotent | `GroupVolume` |
 | `setGroupMute` | `PUT /api/v2/groups/{groupId}/mute` | `groupId`, `muted: bool` | idempotent | `GroupMute` |
 | `setGroupEnabled` | `PUT /api/v2/groups/{groupId}/enabled` | `groupId`, `enabled: bool` | idempotent | `Group` |
+| `stopRoutesForGroup` | `DELETE /api/v2/groups/{groupId}/routes` | `groupId` | destructive | `BulkStopResponse` |
 | `listRoutes` | `GET /api/v2/routes` | `status?: RouteStatus`, `inputId?`, `targetId?` | read-only | `{"routes": [Route]}` |
 | `getRoute` | `GET /api/v2/routes/{routeId}` | `routeId` | read-only | `Route` |
 | `createRoute` | `POST /api/v2/routes` | `inputId`, `targetId`, `targetType: TargetType`, `routeVolume?: Volume` | state-changing | `Route` |
@@ -190,6 +192,7 @@ change without a MAJOR version (Principle II); new tools and optional fields are
 | `transferRoute` | `POST /api/v2/routes/{routeId}/transfer` | `routeId`, `targetId`, `targetType: TargetType` | state-changing | `Route` |
 | `setRoutePause` | `PUT /api/v2/routes/{routeId}/pause` | `routeId`, `paused: bool` | idempotent | `Route` |
 | `setRouteVolume` | `PUT /api/v2/routes/{routeId}/volume` | `routeId`, `volume: Volume` | idempotent | `Route` |
+| `stopAllRoutes` | `DELETE /api/v2/routes` | — | destructive | `BulkStopResponse` |
 | `playback` | `POST /api/v2/play` | `uri`, `targetId`, `targetType: TargetType`, `displayName?`, `volume?: Volume` (sent as `outputVolume`), `routeVolume?: Volume` | state-changing | `PlaybackResponse` (`inputId`, `displayName`, `route`, `message`) |
 | `getMasterMute` | `GET /api/v2/master-mute` | — | read-only | `MasterMute` |
 | `setMasterMute` | `PUT /api/v2/master-mute` | `muted: bool` | idempotent | `MasterMute` |
@@ -303,7 +306,7 @@ outbound internet access to GitHub; the running server does not.
   every input field maps to a path/query parameter or request-body property; `required`, `enum`,
   `minimum`, `maximum`, `minLength`, `pattern` match (path parameters compared as `minLength: 1`);
   every property of the success-response schema is in the tool's `outputSchema` (list envelopes
-  unwrapped, 204 operations skipped); and the registered tool names equal the 25-name inventory.
+  unwrapped, 204 operations skipped); and the registered tool names equal the 28-name inventory.
   [Source: specs/001-go-rewrite/research.md -> R4]
 - Cancellation is covered twice: over in-memory transports (tool handler → hub call), and over the
   real `/mcp` handler with a Streamable HTTP client on protocol ≥ 2026-07-28, which fails if

@@ -2,6 +2,15 @@
 
 ## Merged Features Log
 
+### Stop routes in bulk — 2026-10-27
+**Branch:** stop-routes
+**Spec:** [specs/tiny/stop-routes.md](../../specs/tiny/stop-routes.md)
+
+- Three new destructive, idempotent tools, each returning the hub's `BulkStopResponse`
+  (`stoppedCount`, `stoppedRoutes`) unchanged: `stopRoutesForOutput` (also stops group routes whose
+  group includes the output), `stopRoutesForGroup` and `stopAllRoutes`. 25 → 28 tools, a MINOR
+  release. They use the hub's operation names and take no confirmation argument.
+
 ### Route volume — 2026-10-26
 **Branch:** route-volume
 **Spec:** [specs/tiny/route-volume.md](../../specs/tiny/route-volume.md)

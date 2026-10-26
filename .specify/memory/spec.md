@@ -228,9 +228,9 @@ locally and confirm the conformance test fails.
 
 **Tool surface**
 
-- **FR-001**: The server MUST expose exactly the 25 tools in the Tool Inventory. The 24 of the old
+- **FR-001**: The server MUST expose exactly the 28 tools in the Tool Inventory. The 24 of the old
   server keep their names and input fields (names, types, required/optional); fields added since
-  are optional, and `setRouteVolume` is new.
+  are optional, and `setRouteVolume`, `stopRoutesForOutput`, `stopRoutesForGroup` and `stopAllRoutes` are new.
   [Source: specs/001-go-rewrite/spec.md -> FR-001]
 - **FR-002**: Each tool's input constraints (required fields, enumerations such as target type,
   ranges such as volume 0–100) MUST match the hub API specification, and input that violates
@@ -346,11 +346,13 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
 | `setOutputVolume` | `outputId`, `volume` | idempotent |
 | `setOutputMute` | `outputId`, `muted` | idempotent |
 | `setOutputEnabled` | `outputId`, `enabled` | idempotent |
+| `stopRoutesForOutput` | `outputId` | destructive |
 | `listGroups` | `includeDisabled?` | read-only |
 | `getGroup` | `groupId` | read-only |
 | `setGroupVolume` | `groupId`, `volume` | idempotent |
 | `setGroupMute` | `groupId`, `muted` | idempotent |
 | `setGroupEnabled` | `groupId`, `enabled` | idempotent |
+| `stopRoutesForGroup` | `groupId` | destructive |
 | `listRoutes` | `status?`, `inputId?`, `targetId?` | read-only |
 | `getRoute` | `routeId` | read-only |
 | `createRoute` | `inputId`, `targetId`, `targetType`, `routeVolume?` | state-changing |
@@ -358,6 +360,7 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
 | `transferRoute` | `routeId`, `targetId`, `targetType` | state-changing |
 | `setRoutePause` | `routeId`, `paused` | idempotent |
 | `setRouteVolume` | `routeId`, `volume` | idempotent |
+| `stopAllRoutes` | — | destructive |
 | `playback` | `uri`, `targetId`, `targetType`, `displayName?`, `volume?`, `routeVolume?` | state-changing |
 | `getMasterMute` | — | read-only |
 | `setMasterMute` | `muted` | idempotent |
@@ -390,7 +393,7 @@ Route volume (hub 0.1.29) [Source: specs/tiny/route-volume.md]:
 
 - **Tool** (ToolDefinition, built at startup, immutable): a named action an agent can call; has a
   description, an input schema with constraints, a kind (read-only / state-changing / idempotent /
-  destructive) and maps to one hub operation. Fields: `Name` (unique, exactly the 25 inventory
+  destructive) and maps to one hub operation. Fields: `Name` (unique, exactly the 28 inventory
   names, camelCase, no `_1` suffixes); `Description` (non-empty; every input field also described);
   `Operation` (HTTP method + spec path, must exist in `api.Spec`); `Kind`; `InputSchema` (inferred
   from the input struct plus applied constraints, equal to the spec's); `OutputSchema` (inferred
@@ -452,7 +455,7 @@ Route volume (hub 0.1.29) [Source: specs/tiny/route-volume.md]:
 start → parse config ─invalid→ exit 2
           │
           ▼
-       register 25 tools → listen ─bind error→ exit 1
+       register 28 tools → listen ─bind error→ exit 1
           │
           ▼
        serving ──SIGINT/SIGTERM──▶ draining (no new conns; in-flight ≤ 6 s) ──▶ exit 0
@@ -513,7 +516,8 @@ start → parse config ─invalid→ exit 2
   summaries); names and inputs are what must not change.
   [Source: specs/001-go-rewrite/spec.md -> "Tool descriptions may be richer than the old ones"]
 - **AS-007**: New tools for operations the shared client already supports (speak, voices,
-  extensions, stop-all, stop by output/group) are out of scope and follow as a separate feature.
+  extensions) are out of scope and follow as a separate feature. Stop-all and stop by output/group
+  shipped as `stopAllRoutes`, `stopRoutesForOutput` and `stopRoutesForGroup`.
   [Source: specs/001-go-rewrite/spec.md -> "New tools for operations the shared client already supports"]
 - **AS-008**: Authentication, remote exposure, MCP resources, prompts and push notifications are
   out of scope; the server stays on a trusted home LAN (constitution: Security).
@@ -522,7 +526,7 @@ start → parse config ─invalid→ exit 2
   / systemd), as the hub's Pi does; the operator can run the install script with administrator
   rights. [Source: specs/001-go-rewrite/spec.md -> "The Pi runs a Linux distribution with a standard service manager"]
 - **AS-010**: The time limit per hub call is the shared client's default (5 seconds), from one
-  client shared by all 25 tools; none of them needs a longer bound. A future tool that does (e.g.
+  client shared by all 28 tools; none of them needs a longer bound. A future tool that does (e.g.
   text-to-speech) must also revisit the shutdown drain and SC-003.
   [Source: specs/001-go-rewrite/spec.md -> "The time limit per hub call is the shared client's default"]
 - **AS-011**: The Pi has outbound internet access to GitHub (`github.com`,

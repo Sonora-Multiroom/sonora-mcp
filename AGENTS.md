@@ -72,7 +72,7 @@
 
 - `cmd/sonora-mcp`: entry point (config, server, signal handling, exit codes).
 - `internal/config`, `internal/version`: flags and the build version.
-- `internal/tools`: the 25 tools, schemas, error categories, logging middleware, and the fake
+- `internal/tools`: the 28 tools, schemas, error categories, logging middleware, and the fake
   hub, conformance and architecture tests.
 - `internal/server`: `/mcp`, `/health`, graceful shutdown.
 - `deploy/pi/install.sh`: the Pi installer with the embedded systemd unit.
