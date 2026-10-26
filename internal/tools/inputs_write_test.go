@@ -29,10 +29,10 @@ func TestCreateInputSendsGivenFlags(t *testing.T) {
 
 	res := callTool(t, s, "createInput", map[string]any{
 		"inputId": "podcast-1", "displayName": "Podcast", "uri": "http://podcast.example/ep1.mp3",
-		"enabled": false, "autoRemove": true,
+		"enabled": false, "autoRemove": true, "defaultRouteVolume": 40,
 	})
 	expectRequest(t, hub, "POST", "/api/v2/inputs", "",
-		`{"inputId":"podcast-1","displayName":"Podcast","uri":"http://podcast.example/ep1.mp3","enabled":false,"autoRemove":true}`)
+		`{"inputId":"podcast-1","displayName":"Podcast","uri":"http://podcast.example/ep1.mp3","enabled":false,"autoRemove":true,"defaultRouteVolume":40}`)
 	expectOK(t, res)
 }
 

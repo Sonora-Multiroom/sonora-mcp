@@ -6,7 +6,7 @@
 
 ## Summary
 
-sonora-mcp is a Go MCP server that exposes 24 tools and delegates every hub call to sonora-cli's
+sonora-mcp is a Go MCP server that exposes 25 tools and delegates every hub call to sonora-cli's
 public `hub` package. It adds an error category on every failure, returns results as structured
 content plus JSON text, has a `--host` flag and a hub reachability field in `/health`, shuts down
 cleanly, and ships a systemd unit inside an install script for the Pi. Tools use the MCP Go SDK's
@@ -46,7 +46,7 @@ bound 10 s) [Source: specs/001-go-rewrite/plan.md -> "Performance Goals"]
 the request context and a timeout; LAN-only, unauthenticated; tool names and inputs unchanged
 [Source: specs/001-go-rewrite/plan.md -> "Constraints"]
 
-**Scale/Scope**: 24 tools, one household, a handful of concurrent agents; ~1–1.5k lines of Go plus
+**Scale/Scope**: 25 tools, one household, a handful of concurrent agents; ~1–1.5k lines of Go plus
 tests, one systemd unit, one install script [Source: specs/001-go-rewrite/plan.md -> "Scale/Scope"]
 
 ## Project Structure
@@ -75,9 +75,9 @@ internal/
 │   ├── inputs.go              # listInputs, getInput, createInput, deleteInput, setInputEnabled
 │   ├── outputs.go             # listOutputs, getOutput, setOutputVolume, setOutputMute, setOutputEnabled
 │   ├── groups.go              # listGroups, getGroup, setGroupVolume, setGroupMute, setGroupEnabled
-│   ├── routes.go              # listRoutes, getRoute, createRoute, deleteRoute, transferRoute, setRoutePause
+│   ├── routes.go              # listRoutes, getRoute, createRoute, deleteRoute, transferRoute, setRoutePause, setRouteVolume
 │   ├── playback.go            # playback, getMasterMute, setMasterMute
-│   ├── tools.go               # Register(server, hubClient, hubURL): all 24 (logging is middleware)
+│   ├── tools.go               # Register(server, hubClient, hubURL): all 25 (logging is middleware)
 │   ├── fakehub_test.go        # httptest fake hub recording requests, canned responses
 │   ├── harness_test.go        # in-memory MCP client session + callTool/toolByName helpers
 │   ├── *_test.go              # per-file tool tests through an in-memory MCP client
@@ -162,7 +162,7 @@ Startup log (stderr): version, hub URL, listen address, number of tools register
 [Source: specs/001-go-rewrite/contracts/tools.md -> "Playback and master mute"]
 
 Names and inputs are the compatibility contract with the old Node.js server (FR-001) and must not
-change without a MAJOR version (Principle II). `?` = optional. `TargetType` = `SINGLE_OUTPUT` |
+change without a MAJOR version (Principle II); new tools and optional fields are MINOR. `?` = optional. `TargetType` = `SINGLE_OUTPUT` |
 `OUTPUT_GROUP`. `Volume` = integer 0–100. `RouteStatus` = `STARTING` | `ACTIVE` | `STOPPING` |
 `STOPPED` | `FAILED`.
 
@@ -170,7 +170,7 @@ change without a MAJOR version (Principle II). `?` = optional. `TargetType` = `S
 |---|---|---|---|---|
 | `listInputs` | `GET /api/v2/inputs` | `includeDisabled?: bool` | read-only | `{"inputs": [Input]}` |
 | `getInput` | `GET /api/v2/inputs/{inputId}` | `inputId` | read-only | `Input` |
-| `createInput` | `POST /api/v2/inputs` | `inputId` (pattern `^[a-zA-Z0-9\-_]{1,255}$`), `displayName`, `uri`, `enabled?: bool`, `autoRemove?: bool` | state-changing | `Input` |
+| `createInput` | `POST /api/v2/inputs` | `inputId` (pattern `^[a-zA-Z0-9\-_]{1,255}$`), `displayName`, `uri`, `enabled?: bool`, `autoRemove?: bool`, `defaultRouteVolume?: Volume` | state-changing | `Input` |
 | `deleteInput` | `DELETE /api/v2/inputs/{inputId}` | `inputId` | destructive | `{"deleted": true, "inputId"}` |
 | `setInputEnabled` | `PUT /api/v2/inputs/{inputId}/enabled` | `inputId`, `enabled: bool` | idempotent | `Input` |
 | `listOutputs` | `GET /api/v2/outputs` | `includeDisabled?: bool` | read-only | `{"outputs": [Output]}` |
@@ -185,11 +185,12 @@ change without a MAJOR version (Principle II). `?` = optional. `TargetType` = `S
 | `setGroupEnabled` | `PUT /api/v2/groups/{groupId}/enabled` | `groupId`, `enabled: bool` | idempotent | `Group` |
 | `listRoutes` | `GET /api/v2/routes` | `status?: RouteStatus`, `inputId?`, `targetId?` | read-only | `{"routes": [Route]}` |
 | `getRoute` | `GET /api/v2/routes/{routeId}` | `routeId` | read-only | `Route` |
-| `createRoute` | `POST /api/v2/routes` | `inputId`, `targetId`, `targetType: TargetType` | state-changing | `Route` |
+| `createRoute` | `POST /api/v2/routes` | `inputId`, `targetId`, `targetType: TargetType`, `routeVolume?: Volume` | state-changing | `Route` |
 | `deleteRoute` | `DELETE /api/v2/routes/{routeId}` | `routeId` | destructive | `{"deleted": true, "routeId"}` |
 | `transferRoute` | `POST /api/v2/routes/{routeId}/transfer` | `routeId`, `targetId`, `targetType: TargetType` | state-changing | `Route` |
 | `setRoutePause` | `PUT /api/v2/routes/{routeId}/pause` | `routeId`, `paused: bool` | idempotent | `Route` |
-| `playback` | `POST /api/v2/play` | `uri`, `targetId`, `targetType: TargetType`, `displayName?`, `volume?: Volume` (sent as `outputVolume`) | state-changing | `PlaybackResponse` (`inputId`, `displayName`, `route`, `message`) |
+| `setRouteVolume` | `PUT /api/v2/routes/{routeId}/volume` | `routeId`, `volume: Volume` | idempotent | `Route` |
+| `playback` | `POST /api/v2/play` | `uri`, `targetId`, `targetType: TargetType`, `displayName?`, `volume?: Volume` (sent as `outputVolume`), `routeVolume?: Volume` | state-changing | `PlaybackResponse` (`inputId`, `displayName`, `route`, `message`) |
 | `getMasterMute` | `GET /api/v2/master-mute` | — | read-only | `MasterMute` |
 | `setMasterMute` | `PUT /api/v2/master-mute` | `muted: bool` | idempotent | `MasterMute` |
 
@@ -302,7 +303,7 @@ outbound internet access to GitHub; the running server does not.
   every input field maps to a path/query parameter or request-body property; `required`, `enum`,
   `minimum`, `maximum`, `minLength`, `pattern` match (path parameters compared as `minLength: 1`);
   every property of the success-response schema is in the tool's `outputSchema` (list envelopes
-  unwrapped, 204 operations skipped); and the registered tool names equal the 24-name inventory.
+  unwrapped, 204 operations skipped); and the registered tool names equal the 25-name inventory.
   [Source: specs/001-go-rewrite/research.md -> R4]
 - Cancellation is covered twice: over in-memory transports (tool handler → hub call), and over the
   real `/mcp` handler with a Streamable HTTP client on protocol ≥ 2026-07-28, which fails if

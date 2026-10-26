@@ -16,6 +16,16 @@ func TestCreateRoute(t *testing.T) {
 	expectAnnotations(t, s, "createRoute", StateChanging)
 }
 
+func TestCreateRouteSendsRouteVolume(t *testing.T) {
+	hub := newFakeHub(t)
+	hub.handle("POST", "/api/v2/routes", http.StatusCreated, routeJSON)
+	s := newTestSession(t, hub.URL, nil)
+
+	res := callTool(t, s, "createRoute", map[string]any{"inputId": "radio-1", "targetId": "kitchen", "targetType": "SINGLE_OUTPUT", "routeVolume": 0})
+	expectRequest(t, hub, "POST", "/api/v2/routes", "", `{"inputId":"radio-1","targetId":"kitchen","targetType":"SINGLE_OUTPUT","routeVolume":0}`)
+	expectOK(t, res)
+}
+
 func TestCreateRouteRejectsUnknownTargetType(t *testing.T) {
 	hub := newFakeHub(t)
 	s := newTestSession(t, hub.URL, nil)
@@ -61,6 +71,39 @@ func TestSetRoutePause(t *testing.T) {
 		expectStructured(t, res, want)
 	}
 	expectAnnotations(t, newTestSession(t, "http://unused", nil), "setRoutePause", Idempotent)
+}
+
+func TestSetRouteVolume(t *testing.T) {
+	const want = `{"routeId":"r-1","inputId":"radio-1","targetId":"kitchen","targetType":"SINGLE_OUTPUT","status":"ACTIVE","createdAt":"2026-09-28T10:00:00Z","startedAt":"2026-09-28T10:00:01Z","transferable":true,"pauseable":true,"paused":false,"joinMode":"REPLACE","outputs":["kitchen"],"routeVolume":30,"duckingLevelDb":null}`
+	hub := newFakeHub(t)
+	hub.handle("PUT", "/api/v2/routes/r-1/volume", http.StatusOK, want)
+	s := newTestSession(t, hub.URL, nil)
+
+	res := callTool(t, s, "setRouteVolume", map[string]any{"routeId": "r-1", "volume": 30})
+	expectRequest(t, hub, "PUT", "/api/v2/routes/r-1/volume", "", `{"volume":30}`)
+	expectStructured(t, res, want)
+	expectAnnotations(t, s, "setRouteVolume", Idempotent)
+}
+
+func TestSetRouteVolumeUnknownRoute(t *testing.T) {
+	hub := newFakeHub(t) // unregistered routes answer 404
+	s := newTestSession(t, hub.URL, nil)
+
+	expectErrorPrefix(t, callTool(t, s, "setRouteVolume", map[string]any{"routeId": "r-9", "volume": 30}), "NotFound:")
+}
+
+func TestSetRouteVolumeRejectsBadInput(t *testing.T) {
+	hub := newFakeHub(t)
+	s := newTestSession(t, hub.URL, nil)
+
+	for _, args := range []map[string]any{
+		{"routeId": "r-1", "volume": 101},
+		{"routeId": "", "volume": 30},
+		{"routeId": "r-1"},
+	} {
+		expectInvalidInput(t, callTool(t, s, "setRouteVolume", args))
+	}
+	hub.assertNoRequests(t)
 }
 
 func TestDeleteRoute(t *testing.T) {

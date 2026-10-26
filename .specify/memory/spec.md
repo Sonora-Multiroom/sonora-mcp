@@ -210,8 +210,9 @@ locally and confirm the conformance test fails.
   [Source: specs/001-go-rewrite/spec.md -> "`deleteInput` targets a static (configured) input"]
 - `playback` is called with a URI the hub cannot reach: the error says the audio source could
   not be reached. [Source: specs/001-go-rewrite/spec.md -> "`playback` is called with a URI the hub cannot reach"]
-- Optional fields (`createInput.enabled`, `createInput.autoRemove`, `playback.displayName`,
-  `playback.volume`, sent to the hub as `outputVolume`) are omitted: the hub receives no value for them and applies its defaults,
+- Optional fields (`createInput.enabled`, `createInput.autoRemove`, `createInput.defaultRouteVolume`,
+  `playback.displayName`, `playback.volume`, sent to the hub as `outputVolume`, and `routeVolume` on
+  `playback` and `createRoute`) are omitted: the hub receives no value for them and applies its defaults,
   rather than receiving `false` or `0`. [Source: specs/001-go-rewrite/spec.md -> "Optional fields"]
 - The hub returns a body that cannot be read as the expected data (not JSON, wrong shape):
   the tool returns a malformed-response error rather than partial or invented data.
@@ -227,8 +228,9 @@ locally and confirm the conformance test fails.
 
 **Tool surface**
 
-- **FR-001**: The server MUST expose exactly the 24 tools in the Tool Inventory, with the same
-  names and the same input fields (names, types, required/optional) as the current server.
+- **FR-001**: The server MUST expose exactly the 25 tools in the Tool Inventory. The 24 of the old
+  server keep their names and input fields (names, types, required/optional); fields added since
+  are optional, and `setRouteVolume` is new.
   [Source: specs/001-go-rewrite/spec.md -> FR-001]
 - **FR-002**: Each tool's input constraints (required fields, enumerations such as target type,
   ranges such as volume 0–100) MUST match the hub API specification, and input that violates
@@ -336,7 +338,7 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
 |---|---|---|
 | `listInputs` | `includeDisabled?` | read-only |
 | `getInput` | `inputId` | read-only |
-| `createInput` | `inputId`, `displayName`, `uri`, `enabled?`, `autoRemove?` | state-changing |
+| `createInput` | `inputId`, `displayName`, `uri`, `enabled?`, `autoRemove?`, `defaultRouteVolume?` | state-changing |
 | `deleteInput` | `inputId` | destructive |
 | `setInputEnabled` | `inputId`, `enabled` | idempotent |
 | `listOutputs` | `includeDisabled?` | read-only |
@@ -351,11 +353,12 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
 | `setGroupEnabled` | `groupId`, `enabled` | idempotent |
 | `listRoutes` | `status?`, `inputId?`, `targetId?` | read-only |
 | `getRoute` | `routeId` | read-only |
-| `createRoute` | `inputId`, `targetId`, `targetType` | state-changing |
+| `createRoute` | `inputId`, `targetId`, `targetType`, `routeVolume?` | state-changing |
 | `deleteRoute` | `routeId` | destructive |
 | `transferRoute` | `routeId`, `targetId`, `targetType` | state-changing |
 | `setRoutePause` | `routeId`, `paused` | idempotent |
-| `playback` | `uri`, `targetId`, `targetType`, `displayName?`, `volume?` | state-changing |
+| `setRouteVolume` | `routeId`, `volume` | idempotent |
+| `playback` | `uri`, `targetId`, `targetType`, `displayName?`, `volume?`, `routeVolume?` | state-changing |
 | `getMasterMute` | — | read-only |
 | `setMasterMute` | `muted` | idempotent |
 
@@ -374,11 +377,20 @@ What the descriptions tell an agent about hub behaviour (hub 0.1.25–0.1.28)
   includes `displayName` (the name given, the resolved title of a SoundCloud or YouTube link, or a
   generated placeholder).
 
+Route volume (hub 0.1.29) [Source: specs/tiny/route-volume.md]:
+
+- `routeVolume` on `playback` and `createRoute` is the volume of that playback only: the room's
+  volume does not change and its volume control does not reach the route; mute, master mute and
+  output gain still apply. Omitted, the input's `defaultRouteVolume` applies (set on
+  `createInput`), else the route follows its outputs' volume.
+- `setRouteVolume` changes a route's own volume, also on a route started without one, and no
+  output's volume. A route volume can be changed but never cleared.
+
 ### Key Entities
 
 - **Tool** (ToolDefinition, built at startup, immutable): a named action an agent can call; has a
   description, an input schema with constraints, a kind (read-only / state-changing / idempotent /
-  destructive) and maps to one hub operation. Fields: `Name` (unique, exactly the 24 inventory
+  destructive) and maps to one hub operation. Fields: `Name` (unique, exactly the 25 inventory
   names, camelCase, no `_1` suffixes); `Description` (non-empty; every input field also described);
   `Operation` (HTTP method + spec path, must exist in `api.Spec`); `Kind`; `InputSchema` (inferred
   from the input struct plus applied constraints, equal to the spec's); `OutputSchema` (inferred
@@ -395,7 +407,8 @@ What the descriptions tell an agent about hub behaviour (hub 0.1.25–0.1.28)
   `createInput.inputId` also matches `^[a-zA-Z0-9\-_]{1,255}$`; the `listRoutes` filters
   `inputId`/`targetId` are optional with no `minLength`. `uri` and `createInput.displayName` are
   `minLength: 1`; `playback.displayName` is optional with no `minLength`. `volume` is an integer
-  0–100 (required for set-volume tools, optional for `playback`); `targetType` is `SINGLE_OUTPUT` |
+  0–100 (required for set-volume tools and `setRouteVolume`, optional for `playback`), as are
+  the optional `routeVolume` and `defaultRouteVolume`; `targetType` is `SINGLE_OUTPUT` |
   `OUTPUT_GROUP`; `status` (`listRoutes`) is `STARTING` | `ACTIVE` | `STOPPING` | `STOPPED` |
   `FAILED`, optional. Optional booleans are omitted from the hub request when absent. Validation
   failure → error result with the SDK's `validating "arguments": ...` text (logged as
@@ -439,7 +452,7 @@ What the descriptions tell an agent about hub behaviour (hub 0.1.25–0.1.28)
 start → parse config ─invalid→ exit 2
           │
           ▼
-       register 24 tools → listen ─bind error→ exit 1
+       register 25 tools → listen ─bind error→ exit 1
           │
           ▼
        serving ──SIGINT/SIGTERM──▶ draining (no new conns; in-flight ≤ 6 s) ──▶ exit 0
@@ -509,7 +522,7 @@ start → parse config ─invalid→ exit 2
   / systemd), as the hub's Pi does; the operator can run the install script with administrator
   rights. [Source: specs/001-go-rewrite/spec.md -> "The Pi runs a Linux distribution with a standard service manager"]
 - **AS-010**: The time limit per hub call is the shared client's default (5 seconds), from one
-  client shared by all 24 tools; none of them needs a longer bound. A future tool that does (e.g.
+  client shared by all 25 tools; none of them needs a longer bound. A future tool that does (e.g.
   text-to-speech) must also revisit the shutdown drain and SC-003.
   [Source: specs/001-go-rewrite/spec.md -> "The time limit per hub call is the shared client's default"]
 - **AS-011**: The Pi has outbound internet access to GitHub (`github.com`,

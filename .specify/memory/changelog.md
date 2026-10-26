@@ -2,6 +2,17 @@
 
 ## Merged Features Log
 
+### Route volume — 2026-10-26
+**Branch:** route-volume
+**Spec:** [specs/tiny/route-volume.md](../../specs/tiny/route-volume.md)
+
+- `routeVolume` (0–100, optional) on `playback` and `createRoute`: the volume of that playback
+  only, without changing the room's; `defaultRouteVolume` on `createInput` for its routes.
+- New idempotent tool `setRouteVolume` (`PUT /api/v2/routes/{routeId}/volume`), 24 → 25 tools.
+  A route volume can be changed but never cleared. MINOR release: nothing existing got stricter.
+- The ducking level (`duckingLevelDb`, `defaultDuckingLevelDb`) moved to the join-modes backlog
+  item, since it only works with `DUCK_OTHERS` and no tool chooses a join mode yet.
+
 ### Move to sonora-cli v0.3.1 (hub API 0.1.29) — 2026-10-26
 **Branch:** adopt-sonora-cli-0.3
 **Spec:** [specs/tiny/adopt-sonora-cli-0.3.md](../../specs/tiny/adopt-sonora-cli-0.3.md)
