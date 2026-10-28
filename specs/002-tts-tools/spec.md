@@ -156,6 +156,9 @@ because it shares the TTS error handling and test setup with the stories above.
 - **Slow announcement acceptance**: a cold cloud provider can take longer than an ordinary hub call
   to accept an announcement. `speak` waits for the longer bound the shared hub client sets for
   announcements (15 seconds); every other TTS tool keeps the ordinary bound (5 seconds).
+- **Provider that cannot list voices**: some providers, such as `piper-local`, do not support voice
+  listing; the hub answers 400 `INVALID_REQUEST`, which reaches the agent as a validation error with
+  the hub's explanation. The `listTtsVoices` description says so.
 - **Target disabled or not available**: whatever the hub answers reaches the agent with its category
   and explanation; the server does not check the target itself.
 - **Target given by display name** ("Kitchen speaker") instead of ID: the hub answers not-found; the

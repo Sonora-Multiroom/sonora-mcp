@@ -238,3 +238,10 @@ tagged, when the user asks for the release.
 2. US2 (playback mode, announcement volume, ducking) on the same tool.
 3. US3 (voices), then US4 (cache), each a self-contained addition.
 4. Polish, live checks and `verification.md`; then commit and PR (MINOR release).
+
+---
+
+## Phase 8: Convergence
+
+- [X] T027 Add to the `speak` description in `internal/tools/tts.go` that a Timeout does not mean nothing was spoken: the hub may still have queued and spoken the announcement, so check before repeating the call (a repeat of a cached phrase answers at once); test first in `internal/tools/tts_speak_test.go` that the description mentions it, per Constitution II (partial)
+- [X] T028 Record in `spec.md` (US3 edge cases) and `contracts/tools.md` that a provider which cannot list voices, such as `piper-local`, makes `listTtsVoices` fail with Validation from the hub, matching the `listTtsVoices` description, its test and `quickstart.md` §2 (unrequested)

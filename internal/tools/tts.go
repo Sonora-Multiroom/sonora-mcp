@@ -68,7 +68,7 @@ func registerTTS(s *mcp.Server, client, speakClient *http.Client, hubURL string)
 			"playbackMode is duck-others (other audio keeps playing quieter underneath) or mix (the announcement plays over it unchanged); duckingLevelDb applies only with duck-others. " +
 			"routeVolume sets this announcement's volume only and changes no output's volume. " +
 			"Returns {\"announcementId\", \"cacheHit\", \"queueDepth\"}: the announcement's ID, whether its audio came from the hub's cache, and how many announcements are queued; " +
-			"fails with NotFound if the target or provider is unknown, Validation if the hub rejects the request, ServiceUnavailable if the provider is down, slow or rate-limited, and TtsUnavailable if the hub has no working text-to-speech (the message says why).",
+			"fails with NotFound if the target or provider is unknown, Validation if the hub rejects the request, ServiceUnavailable if the provider is down, slow or rate-limited, Timeout if the hub did not answer in time (the announcement may still have been queued and spoken, so check before repeating the call; a phrase the hub has already synthesised is accepted at once), and TtsUnavailable if the hub has no working text-to-speech (the message says why).",
 		Kind: StateChanging, Method: "POST", Path: "/api/tts/speak",
 	}, inputSchema[speakIn](withMinLength("text", 1), withMinLength("targetName", 1), withEnum("targetType", targetTypes...),
 		withRange("routeVolume", 0, 100), withRange("duckingLevelDb", -60, 0)),

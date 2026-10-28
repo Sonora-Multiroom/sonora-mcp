@@ -23,7 +23,8 @@ The bound includes the diagnosis after a "not offered" answer.
   announcement's volume only and changes no output's volume. Failures: NotFound (unknown target or
   provider), Validation, ServiceUnavailable (provider down, slow or rate-limited), TtsUnavailable.
 - **`listTtsVoices`**: pass a voice's `shortName` to `speak`'s `voice`; an empty list is not an
-  error; NotFound for an unknown provider.
+  error; NotFound for an unknown provider; some providers, such as `piper-local`, cannot list
+  voices, and the hub then answers Validation ("does not support voice listing").
 - **`getTtsCacheStats`**: sizes are in bytes.
 - **`clearTtsCache`**: clears every provider's cached audio, or one provider's; the next
   announcement of a cleared phrase is synthesised again (a billed provider is charged again).

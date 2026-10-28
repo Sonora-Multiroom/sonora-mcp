@@ -202,3 +202,13 @@ func TestSpeakDescribesPlayback(t *testing.T) {
 		}
 	}
 }
+
+func TestSpeakDescribesTimeout(t *testing.T) {
+	s := newTestSession(t, "http://127.0.0.1:1", nil)
+	desc := toolByName(t, s, "speak").Description
+	for _, want := range []string{"Timeout", "may still"} {
+		if !strings.Contains(desc, want) {
+			t.Errorf("description does not mention %q: %s", want, desc)
+		}
+	}
+}
