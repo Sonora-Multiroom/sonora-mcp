@@ -108,7 +108,7 @@ func (s *openAPI) fields(op operation) map[string]specField {
 func (s *openAPI) successSchema(op operation) map[string]any {
 	for _, code := range []string{"200", "201", "202"} {
 		if r, ok := op.Responses[code]; ok {
-			if c, ok := r.Content["application/json"]; ok {
+			if c, ok := jsonContent(r.Content); ok {
 				schema := s.resolve(c.Schema)
 				if schema["type"] == "array" {
 					schema = s.resolve(schema["items"].(map[string]any))
@@ -257,7 +257,7 @@ func TestToolDescriptions(t *testing.T) {
 // actually registered (used by the startup log).
 func TestRegisterCount(t *testing.T) {
 	server := mcp.NewServer(&mcp.Implementation{Name: "sonora-mcp", Version: "test"}, nil)
-	n := Register(server, nil, "http://127.0.0.1:1")
+	n := Register(server, nil, nil, "http://127.0.0.1:1")
 	res, err := connect(t, server).ListTools(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("ListTools: %v", err)
@@ -267,7 +267,7 @@ func TestRegisterCount(t *testing.T) {
 	}
 }
 
-// contractTools are the 28 tool names in contracts/tools.md, the
+// contractTools are the tool names in contracts/tools.md, the
 // compatibility contract with the Node.js server (FR-001).
 var contractTools = []string{
 	"listInputs", "getInput", "createInput", "deleteInput", "setInputEnabled",
@@ -276,6 +276,7 @@ var contractTools = []string{
 	"listRoutes", "getRoute", "createRoute", "deleteRoute", "transferRoute", "setRoutePause",
 	"setRouteVolume", "stopRoutesForOutput", "stopRoutesForGroup", "stopAllRoutes",
 	"playback", "getMasterMute", "setMasterMute",
+	"speak", "listTtsVoices", "getTtsCacheStats", "clearTtsCache",
 }
 
 // TestToolInventory checks that the server lists exactly the contract's
@@ -292,4 +293,14 @@ func TestToolInventory(t *testing.T) {
 			t.Errorf("tool %q is registered but not in contracts/tools.md", name)
 		}
 	}
+}
+
+// jsonContent returns the JSON body of a response: application/json, or the
+// */* the TTS extension's responses are published as (research R7).
+func jsonContent[T any](content map[string]T) (T, bool) {
+	if c, ok := content["application/json"]; ok {
+		return c, true
+	}
+	c, ok := content["*/*"]
+	return c, ok
 }

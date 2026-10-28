@@ -53,7 +53,7 @@ func TestRunDrainsInFlightCallsOnShutdown(t *testing.T) {
 
 	s := mcp.NewServer(&mcp.Implementation{Name: "sonora-mcp", Version: "test"}, nil)
 	client := &http.Client{Timeout: 5 * time.Second}
-	tools.Register(s, client, hub.URL)
+	tools.Register(s, client, client, hub.URL)
 	addr := freeAddr(t)
 	srv := &http.Server{Addr: addr, Handler: Handler(s, client, hub.URL)}
 

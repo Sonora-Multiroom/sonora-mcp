@@ -9,9 +9,10 @@ import (
 )
 
 // Register adds every sonora-mcp tool to s. Tools call the hub at hubURL with
-// client and the request context; nothing is cached between calls. It
-// returns the number of tools registered.
-func Register(s *mcp.Server, client *http.Client, hubURL string) int {
+// client and the request context; nothing is cached between calls. speakClient
+// serves speak, whose bound is longer than the other tools'. It returns the
+// number of tools registered.
+func Register(s *mcp.Server, client, speakClient *http.Client, hubURL string) int {
 	registrars := []func(*mcp.Server, *http.Client, string) int{
 		registerInputs,
 		registerOutputs,
@@ -23,5 +24,6 @@ func Register(s *mcp.Server, client *http.Client, hubURL string) int {
 	for _, r := range registrars {
 		n += r(s, client, hubURL)
 	}
+	n += registerTTS(s, client, speakClient, hubURL)
 	return n
 }

@@ -34,7 +34,7 @@ go run ./cmd/sonora-mcp --multiroom-url http://multiroom.lan:8080
 npx @modelcontextprotocol/inspector   # connect to http://localhost:3001/mcp
 ```
 
-- `listTtsVoices` with `providerName: piper-local` lists voices.
+- `listTtsVoices` with `providerName: google` and `language: uk-UA` lists voices; `piper-local` cannot list voices and answers `Validation: INVALID_REQUEST: … does not support voice listing`.
 - `listTtsVoices` with `providerName: nope` gives `NotFound: PROVIDER_NOT_FOUND: …`.
 - `getTtsCacheStats` gives the four figures, with `totalEntries` and the other names in camelCase.
 

@@ -16,7 +16,7 @@ func newTestServer(t *testing.T, hubURL string) *httptest.Server {
 	t.Helper()
 	s := mcp.NewServer(&mcp.Implementation{Name: "sonora-mcp", Version: "test"}, nil)
 	client := &http.Client{}
-	tools.Register(s, client, hubURL)
+	tools.Register(s, client, client, hubURL)
 	ts := httptest.NewServer(Handler(s, client, hubURL))
 	t.Cleanup(ts.Close)
 	return ts
@@ -74,7 +74,7 @@ func TestCancelOverHTTP(t *testing.T) {
 
 	s := mcp.NewServer(&mcp.Implementation{Name: "sonora-mcp", Version: "test"}, nil)
 	client := &http.Client{Timeout: 5 * time.Second}
-	tools.Register(s, client, hub.URL)
+	tools.Register(s, client, client, hub.URL)
 	ts := httptest.NewServer(Handler(s, client, hub.URL))
 	t.Cleanup(ts.Close)
 

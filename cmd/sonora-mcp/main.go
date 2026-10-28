@@ -76,9 +76,10 @@ type app struct {
 // startup line is logged once the server is listening.
 func newApp(cfg config.Config, logger *slog.Logger) *app {
 	client := hub.NewClient()
+	speakClient := hub.NewClientWithTimeout(hub.SpeakTimeout)
 	s := mcp.NewServer(&mcp.Implementation{Name: "sonora-mcp", Version: version.Version},
 		&mcp.ServerOptions{Capabilities: &mcp.ServerCapabilities{Tools: &mcp.ToolCapabilities{}}})
-	count := tools.Register(s, client, cfg.HubURL)
+	count := tools.Register(s, client, speakClient, cfg.HubURL)
 	s.AddReceivingMiddleware(tools.LogToolCalls(logger))
 
 	srv := &http.Server{

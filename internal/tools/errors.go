@@ -18,6 +18,7 @@ const (
 	CategoryConflict           = "Conflict"
 	CategorySourceUnreachable  = "SourceUnreachable"
 	CategoryServiceUnavailable = "ServiceUnavailable"
+	CategoryTtsUnavailable     = "TtsUnavailable"
 	CategoryNetwork            = "Network"
 	CategoryTimeout            = "Timeout"
 	CategoryMalformedResponse  = "MalformedResponse"
@@ -49,6 +50,16 @@ func toolError(err error) error {
 }
 
 func classify(err error) (category, message string) {
+	// A diagnosed "not offered" answer comes first: its cause may be the
+	// timeout or decode failure of the inventory lookup, which must not hide
+	// that text-to-speech is unavailable.
+	var unavailErr *hub.TTSUnavailableError
+	if errors.As(err, &unavailErr) {
+		if unavailErr.Diagnosis == hub.DiagnosisHubAddress {
+			return CategoryNetwork, unavailErr.Error()
+		}
+		return CategoryTtsUnavailable, unavailErr.Error()
+	}
 	var decodeErr *hub.DecodeError
 	if errors.As(err, &decodeErr) {
 		return CategoryMalformedResponse, fmt.Sprintf("the hub's response could not be read: %v", decodeErr.Err)
@@ -85,6 +96,8 @@ func classify(err error) (category, message string) {
 		return CategorySourceUnreachable, message
 	case hub.ClassServiceUnavailable:
 		return CategoryServiceUnavailable, message
+	case hub.ClassTTSUnavailable:
+		return CategoryTtsUnavailable, message
 	case hub.ClassNetwork:
 		return CategoryNetwork, fmt.Sprintf("%s: %v", message, err)
 	default:
