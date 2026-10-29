@@ -64,7 +64,7 @@
 - Go 1.27, `CGO_ENABLED=0` static builds (Windows amd64 for development, linux/arm64 on the Pi).
 - `github.com/modelcontextprotocol/go-sdk` v1.8.0 (typed `mcp.AddTool`, stateless Streamable
   HTTP), with `github.com/google/jsonschema-go` for schemas.
-- `github.com/Sonora-Multiroom/sonora-cli` v0.3.1 (`hub` client, `api.Spec` of hub API 0.1.29).
+- `github.com/Sonora-Multiroom/sonora-cli` v0.3.4 (`hub` client, `api.Spec` of hub API 0.1.29).
 - Standard library otherwise: `net/http`, `flag`, `log/slog`, `os/signal`.
 - GoReleaser and GitHub Actions for releases and PR checks; systemd on the Pi.
 
@@ -72,7 +72,7 @@
 
 - `cmd/sonora-mcp`: entry point (config, server, signal handling, exit codes).
 - `internal/config`, `internal/version`: flags and the build version.
-- `internal/tools`: the 28 tools, schemas, error categories, logging middleware, and the fake
+- `internal/tools`: the 32 tools, schemas, error categories, logging middleware, and the fake
   hub, conformance and architecture tests.
 - `internal/server`: `/mcp`, `/health`, graceful shutdown.
 - `deploy/pi/install.sh`: the Pi installer with the embedded systemd unit.
@@ -89,6 +89,9 @@
 
 ## Recent Changes
 
+- specs/002-tts-tools: `speak`, `listTtsVoices`, `getTtsCacheStats` and `clearTtsCache` (28 → 32
+  tools) and the `TtsUnavailable` error category, whose reason the shared hub client diagnoses;
+  `speak` has its own 15 s client.
 - specs/001-go-rewrite: Go rewrite on sonora-cli's `hub` package, released as v1.1.0. Same 24
   tools with structured results and category-prefixed errors; `--host`, `/health` hub check,
   graceful shutdown; one-command Pi install; GoReleaser releases; Node.js server removed.

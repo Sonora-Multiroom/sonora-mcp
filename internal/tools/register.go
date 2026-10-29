@@ -26,6 +26,9 @@ const (
 	StateChanging
 	// Destructive tools remove things.
 	Destructive
+	// DestructiveIdempotent tools remove things, and repeating the call removes
+	// nothing more.
+	DestructiveIdempotent
 )
 
 // annotations returns the MCP tool annotations for k.
@@ -38,6 +41,8 @@ func (k Kind) annotations() *mcp.ToolAnnotations {
 		return &mcp.ToolAnnotations{DestructiveHint: &no, IdempotentHint: true}
 	case StateChanging:
 		return &mcp.ToolAnnotations{DestructiveHint: &no}
+	case DestructiveIdempotent:
+		return &mcp.ToolAnnotations{DestructiveHint: &yes, IdempotentHint: true}
 	default:
 		return &mcp.ToolAnnotations{DestructiveHint: &yes}
 	}

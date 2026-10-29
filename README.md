@@ -1,6 +1,6 @@
 # sonora-mcp
 
-MCP server for the Sonora Multiroom audio system. It exposes the Multiroom Audio Hub API as 28 MCP
+MCP server for the Sonora Multiroom audio system. It exposes the Multiroom Audio Hub API as 32 MCP
 tools, so any AI assistant that supports MCP can list and control your speakers, groups, inputs
 and routes over a URL.
 
@@ -124,7 +124,7 @@ npx @modelcontextprotocol/inspector
 
 Connect to `http://localhost:3001/mcp` with the Streamable HTTP transport.
 
-## Tools (28)
+## Tools (32)
 
 Every tool returns structured content (and the same JSON as text). Lists are wrapped in an object,
 such as `{"outputs": [...]}`.
@@ -182,6 +182,18 @@ such as `{"outputs": [...]}`.
 | `getMasterMute` | Get the system-wide master mute state |
 | `setMasterMute` | Turn the system-wide master mute on or off |
 
+### Text-to-speech
+
+Announcements are spoken by the hub's TTS extension. Omitting `providerName` uses the hub's configured
+provider, which may be a billed cloud service; `piper-local` runs on the hub at no cost.
+
+| Tool | Description |
+|---|---|
+| `speak` | Speak a text on an output or group (`playbackMode`, `routeVolume` and `duckingLevelDb` for ducking and a volume of its own); returns once the announcement is queued |
+| `listTtsVoices` | List a provider's voices, optionally by language or engine |
+| `getTtsCacheStats` | Read the size and entries of the TTS audio cache |
+| `clearTtsCache` | Clear the TTS audio cache, for all providers or one |
+
 ### Errors
 
 A failed call returns an error result whose text starts with a category:
@@ -194,7 +206,8 @@ A failed call returns an error result whose text starts with a category:
 | `RouteFailed` | The hub could not create the route |
 | `SourceUnreachable` | The hub could not reach the audio source |
 | `ServiceUnavailable` | The hub is temporarily unavailable |
-| `Timeout` | The hub did not answer in time (5 s) |
+| `TtsUnavailable` | The hub has no working text-to-speech; the message says why (not installed, disabled, failed to load, inactive or a version mismatch) |
+| `Timeout` | The hub did not answer in time (5 s; 15 s for `speak`) |
 | `Network` | The hub could not be reached |
 | `MalformedResponse` | The hub's response didn't match the API |
 | `HubError` | Any other hub error |

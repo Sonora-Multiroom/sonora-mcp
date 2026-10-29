@@ -76,6 +76,7 @@ func TestAddAnnotationsPerKind(t *testing.T) {
 		{Idempotent, mcp.ToolAnnotations{DestructiveHint: &f, IdempotentHint: true}},
 		{StateChanging, mcp.ToolAnnotations{DestructiveHint: &f}},
 		{Destructive, mcp.ToolAnnotations{DestructiveHint: &tr}},
+		{DestructiveIdempotent, mcp.ToolAnnotations{DestructiveHint: &tr, IdempotentHint: true}},
 	}
 	for _, tt := range tests {
 		s, _ := newEchoSession(t, tt.kind, "echoKind")

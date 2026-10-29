@@ -13,4 +13,6 @@ you add, ship or delete an item, update this list.
 | Priority | Item | Kind | Effort | Why this priority |
 |---|---|---|---|---|
 | P2 | [Join modes, ducking level and an output's routes](join-modes.md) | Feature | Small–Medium | Every `playback` replaces what is playing, so an announcement stops the user's music instead of ducking it |
+| P3 | [Server instructions and a fuller server identity](server-instructions.md) | Feature | Small | Cross-tool guidance (confirm before audible actions, use `routeVolume` for announcements) has no place; discovery returns no instructions |
 | P3 | [Rename an input](rename-input.md) | Feature | Small | The hub can rename inputs without interrupting them; no tool exposes it |
+| P4 | [List the hub's extensions](list-extensions.md) | Feature | Small | General diagnostics only; TTS errors now carry their own reason |

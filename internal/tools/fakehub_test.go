@@ -149,3 +149,35 @@ func (h *fakeHub) serve(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(route.status)
 	_, _ = io.WriteString(w, route.body)
 }
+
+// ttsDisabledInventoryJSON is an extension inventory whose TTS extension is
+// disabled.
+const ttsDisabledInventoryJSON = `{"loadingEnabled":true,"extensions":[{"id":"tts","status":"DISABLED","rejectionReason":null}]}`
+
+// inventoryJSON builds an extension inventory with loadingEnabled and the
+// given extension entries (a comma-separated JSON list, possibly empty).
+func inventoryJSON(loadingEnabled bool, extensions string) string {
+	flag := "false"
+	if loadingEnabled {
+		flag = "true"
+	}
+	return `{"loadingEnabled":` + flag + `,"extensions":[` + extensions + `]}`
+}
+
+// speakAcceptedJSON is the hub's 202 for an announcement.
+const speakAcceptedJSON = `{"announcementId":"6f1c2d3e-0000-4000-8000-000000000001","cacheHit":false,"queueDepth":1}`
+
+// voiceListJSON is the hub's voice list for piper-local; the second voice has
+// no gender.
+const voiceListJSON = `{"providerName":"piper-local","voices":[` +
+	`{"shortName":"uk_UA-lada-x_low","fullName":"Lada (Ukrainian)","engine":"piper","language":"uk-UA","gender":"female"},` +
+	`{"shortName":"en_US-amy-low","fullName":"Amy (English)","engine":"piper","language":"en-US"}]}`
+
+// voiceListResultJSON is voiceListJSON as the tool returns it: an absent field
+// comes back as null.
+const voiceListResultJSON = `{"providerName":"piper-local","voices":[` +
+	`{"shortName":"uk_UA-lada-x_low","fullName":"Lada (Ukrainian)","engine":"piper","language":"uk-UA","gender":"female"},` +
+	`{"shortName":"en_US-amy-low","fullName":"Amy (English)","engine":"piper","language":"en-US","gender":null}]}`
+
+// cacheStatsJSON is the hub's TTS cache statistics.
+const cacheStatsJSON = `{"totalEntries":42,"totalSizeBytes":15728640,"maxSizeBytes":524288000,"entriesByProvider":{"piper-local":7}}`

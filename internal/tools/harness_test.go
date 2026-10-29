@@ -19,8 +19,14 @@ func newTestSession(t *testing.T, hubURL string, client *http.Client) *mcp.Clien
 	if client == nil {
 		client = hub.NewClient()
 	}
+	return newTestSessionClients(t, hubURL, client, client)
+}
+
+// newTestSessionClients is newTestSession with a separate client for speak.
+func newTestSessionClients(t *testing.T, hubURL string, client, speakClient *http.Client) *mcp.ClientSession {
+	t.Helper()
 	server := mcp.NewServer(&mcp.Implementation{Name: "sonora-mcp", Version: "test"}, nil)
-	Register(server, client, hubURL)
+	Register(server, client, speakClient, hubURL)
 	return connect(t, server)
 }
 

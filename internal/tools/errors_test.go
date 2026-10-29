@@ -96,3 +96,46 @@ func TestToolErrorKeepsCause(t *testing.T) {
 		t.Fatal("toolError must wrap the hub error")
 	}
 }
+
+func TestToolErrorTTS(t *testing.T) {
+	const head = "text-to-speech is not available on this hub"
+	tests := []struct {
+		name     string
+		err      error
+		category string
+		want     string // exact text after the category, or "" to skip
+		contains []string
+	}{
+		{"not installed", &hub.TTSUnavailableError{Diagnosis: hub.DiagnosisNotInstalled}, CategoryTtsUnavailable, "", []string{head, "not installed"}},
+		{"not installed, loading off", &hub.TTSUnavailableError{Diagnosis: hub.DiagnosisNotInstalled, LoadingDisabled: true}, CategoryTtsUnavailable, "", []string{"not installed", "switched off"}},
+		{"disabled", &hub.TTSUnavailableError{Diagnosis: hub.DiagnosisDisabled}, CategoryTtsUnavailable, "", []string{"disabled"}},
+		{"rejected", &hub.TTSUnavailableError{Diagnosis: hub.DiagnosisRejected, Reason: "bad jar"}, CategoryTtsUnavailable, "", []string{"failed to load: bad jar"}},
+		{"inert", &hub.TTSUnavailableError{Diagnosis: hub.DiagnosisInert}, CategoryTtsUnavailable, "", []string{"loaded but inactive"}},
+		{"version mismatch", &hub.TTSUnavailableError{Diagnosis: hub.DiagnosisVersionMismatch}, CategoryTtsUnavailable, "", []string{"does not match"}},
+		{"unknown after timeout", &hub.TTSUnavailableError{Diagnosis: hub.DiagnosisUnknown, Cause: context.DeadlineExceeded}, CategoryTtsUnavailable, head, nil},
+		{"unknown after decode error", &hub.TTSUnavailableError{Diagnosis: hub.DiagnosisUnknown, Cause: &hub.DecodeError{Err: errors.New("eof")}}, CategoryTtsUnavailable, head, nil},
+		{"hub address", &hub.TTSUnavailableError{Diagnosis: hub.DiagnosisHubAddress, BaseURL: "http://nope.lan"}, CategoryNetwork, "http://nope.lan is not serving the Multiroom Audio Hub API: the hub URL is wrong, or the hub's control API (REST) extension is not installed or not loaded", nil},
+		{"bare not offered", &hub.TTSNotOfferedError{}, CategoryTtsUnavailable, head, nil},
+		{"wrapped not offered", fmt.Errorf("speak: %w", &hub.TTSNotOfferedError{}), CategoryTtsUnavailable, head, nil},
+		{"target not found", &hub.TTSError{StatusCode: 400, Code: "TARGET_NOT_FOUND", Message: "no target kitchn"}, CategoryNotFound, "", []string{"kitchn"}},
+		{"provider not found", &hub.TTSError{StatusCode: 400, Code: "PROVIDER_NOT_FOUND", Message: "no provider foo"}, CategoryNotFound, "", []string{"foo"}},
+		{"invalid request", &hub.TTSError{StatusCode: 400, Code: "INVALID_REQUEST", Message: "mix has no ducking"}, CategoryValidation, "", []string{"mix has no ducking"}},
+		{"provider timeout", &hub.TTSError{StatusCode: 503, Code: "PROVIDER_TIMEOUT", Message: "slow cloud"}, CategoryServiceUnavailable, "", []string{"slow cloud"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := toolError(tt.err).Error()
+			if !strings.HasPrefix(got, tt.category+": ") {
+				t.Fatalf("toolError = %q, want prefix %q", got, tt.category+": ")
+			}
+			if tt.want != "" && got != tt.category+": "+tt.want {
+				t.Errorf("toolError = %q, want %q", got, tt.category+": "+tt.want)
+			}
+			for _, s := range tt.contains {
+				if !strings.Contains(got, s) {
+					t.Errorf("toolError = %q, want it to contain %q", got, s)
+				}
+			}
+		})
+	}
+}
