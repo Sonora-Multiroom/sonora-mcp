@@ -78,13 +78,51 @@ else
     fi
 fi
 
+# install.sh downloads the release named by its RELEASE_TAG, so it has to be
+# bumped in the commit that gets tagged. Release candidates are left alone.
+install_sh="deploy/pi/install.sh"
+pinned=$(sed -n 's/^RELEASE_TAG="\(.*\)"$/\1/p' "$install_sh")
+update_install=""
+case "$version" in
+    *-*) ;;
+    *)
+        if [ "$pinned" = "$tag" ]; then
+            :
+        elif [ "$current_branch" != "main" ]; then
+            echo "Warning: $install_sh pins ${pinned:-nothing} and is not bumped from branch '$current_branch'." >&2
+            echo "Switch to main and re-run to have it updated, or bump it by hand." >&2
+        else
+            printf '%s pins %s. Point it at %s, commit and push to origin/main first? [Y/n] ' \
+                "$install_sh" "${pinned:-nothing}" "$tag"
+            read -r bump_confirm
+            case "$bump_confirm" in
+                n|N|no|NO) echo "Leaving $install_sh as it is." ;;
+                *) update_install=1 ;;
+            esac
+        fi
+        ;;
+esac
+
 main_sha=$(git rev-parse main)
-printf 'About to tag %s at main (%s) and push to origin. Continue? [y/N] ' "$tag" "$main_sha"
+if [ -n "$update_install" ]; then
+    printf 'About to bump %s, push that commit to main (on top of %s), then tag %s and push it. Continue? [y/N] ' \
+        "$install_sh" "$main_sha" "$tag"
+else
+    printf 'About to tag %s at main (%s) and push to origin. Continue? [y/N] ' "$tag" "$main_sha"
+fi
 read -r confirm
 case "$confirm" in
     y|Y|yes|YES) ;;
     *) echo "Aborted."; exit 1 ;;
 esac
+
+if [ -n "$update_install" ]; then
+    sed "s/^RELEASE_TAG=\".*\"\$/RELEASE_TAG=\"$tag\"/" "$install_sh" >"$install_sh.tmp"
+    mv "$install_sh.tmp" "$install_sh"
+    git add "$install_sh"
+    git commit -m "chore(release): point install.sh at $tag"
+    git push origin main
+fi
 
 git tag -a "$tag" -m "Release $tag" main
 git push origin "$tag"
