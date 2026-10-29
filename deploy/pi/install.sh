@@ -16,7 +16,7 @@ set -euo pipefail
 
 # Release whose binary is installed. Set to the release tag in the commit
 # that gets tagged on main; override with --version.
-RELEASE_TAG="v1.2.2"
+RELEASE_TAG="v1.2.3"
 
 REPO="Sonora-Multiroom/sonora-mcp"
 SCRIPT_URL="https://raw.githubusercontent.com/${REPO}/main/deploy/pi/install.sh"
