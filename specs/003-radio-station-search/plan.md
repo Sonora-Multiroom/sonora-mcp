@@ -92,7 +92,7 @@ internal/tools/
 ├── radio_station_test.go        # NEW
 ├── radio_lists_test.go          # NEW: countries, languages, tags
 ├── radio_unavailable_test.go    # NEW: every diagnosis outcome, inventory 404 and failure, problem mapping,
-│                                #      and the radio timeout (a call outlasting 5 s still succeeds)
+│                                #      and the radio timeout (a call slower than the standard client's bound still succeeds)
 └── tts_unavailable_test.go      # hub.TTSDiagnosis → hub.ExtensionDiagnosis (R9)
 README.md, AGENTS.md             # tool list and count (33 → 38), RadioUnavailable, Recent Changes
 docs/backlog/                    # delete adopt-radio-search.md; update INDEX.md
