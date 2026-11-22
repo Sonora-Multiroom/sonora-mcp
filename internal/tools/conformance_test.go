@@ -277,7 +277,7 @@ var contractTools = []string{
 	"setRouteVolume", "stopRoutesForOutput", "stopRoutesForGroup", "stopAllRoutes",
 	"playback", "getMasterMute", "setMasterMute", "listChimes",
 	"speak", "listTtsVoices", "getTtsCacheStats", "clearTtsCache",
-	"searchRadioStations", "getRadioStation",
+	"searchRadioStations", "getRadioStation", "listRadioCountries", "listRadioLanguages", "listRadioTags",
 }
 
 // TestToolInventory checks that the server lists exactly the contract's

@@ -64,3 +64,19 @@ Date: 2026-11-22, `GOWORK=off`.
 | `go test ./... -count=1` | 0 | all packages `ok`; 35 tools |
 
 No tracked or untracked file shows `w/crlf`.
+
+## Phase 6 (US4 catalogue lists)
+
+Date: 2026-11-22, `GOWORK=off`.
+
+- T020: `radio_lists_test.go` failed first (`unknown tool "listRadioCountries"` and the other two), then T021 made it pass.
+- The input-description check for every tool is the existing `TestToolDescriptions`, which covers all registered tools, so no new table test was added.
+- `listRadioCountries` and `listRadioLanguages` return `{"countries": [...]}` and `{"languages": [...]}`; an empty hub list gives `[]`, never `null`. `TestConformance` passes for all three tools with the `countries` and `languages` envelopes from the foundational phase; no change to the conformance test was needed beyond `contractTools`.
+- `cmd/sonora-mcp/main_test.go` now expects 38 tools.
+
+| Command | Exit code | Result |
+|---|---|---|
+| `gofmt -l .` | 0 | empty |
+| `go vet ./...` | 0 | clean |
+| `go build ./...` | 0 | clean |
+| `go test ./... -count=1` | 0 | all packages `ok`; 38 tools |
