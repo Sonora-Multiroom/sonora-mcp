@@ -47,3 +47,20 @@ Date: 2026-11-22, `GOWORK=off`.
 | `go vet ./...` | 0 | clean |
 | `go build ./...` | 0 | clean |
 | `go test ./... -count=1` | 0 | all packages `ok`; 34 tools |
+
+## Phases 4 and 5 (US2 closing check, US3 lookup)
+
+Date: 2026-11-22, `GOWORK=off`.
+
+- **US2: no gap found.** After T014, the T015 and T016 tests passed unchanged (`go test ./internal/tools -run 'Radio|Cancel'` ok), so T017 made no code change.
+- T018 was written first and failed (`unknown tool "getRadioStation"`); T019 then made it pass. `TestConformance/getRadioStation` and `TestToolInventory` pass with the tool in `contractTools`.
+- `cmd/sonora-mcp/main_test.go` now expects 35 tools; T022 sets the final 38.
+
+| Command | Exit code | Result |
+|---|---|---|
+| `gofmt -l .` | 0 | empty |
+| `go vet ./...` | 0 | clean |
+| `go build ./...` | 0 | clean |
+| `go test ./... -count=1` | 0 | all packages `ok`; 35 tools |
+
+No tracked or untracked file shows `w/crlf`.

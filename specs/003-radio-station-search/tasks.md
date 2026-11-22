@@ -147,7 +147,7 @@ own rows in their phases.
 **Independent Test**: against a fake hub that answers 404 to the radio paths and reports each extension state,
 check the error category and reason for each.
 
-- [ ] T017 [US2] Fix any gap that T015 or T016 still shows after T014, in `internal/tools/radio.go` or `internal/tools/errors.go` (for example a wrong bound, a missing `radioError` on the error path, a message that lacks the parameter). If nothing failed, record that in `specs/003-radio-station-search/verification.md` under "US2" and make no change.
+- [X] T017 [US2] Fix any gap that T015 or T016 still shows after T014, in `internal/tools/radio.go` or `internal/tools/errors.go` (for example a wrong bound, a missing `radioError` on the error path, a message that lacks the parameter). If nothing failed, record that in `specs/003-radio-station-search/verification.md` under "US2" and make no change.
 
 **Checkpoint**: every radio failure names its cause; the radio client's bound is the long one.
 
@@ -160,7 +160,7 @@ check the error category and reason for each.
 **Independent Test**: against the fake hub, look up a UUID and check the station is returned unchanged; look up
 an unknown one and check for `NotFound` naming it.
 
-- [ ] T018 [US3] Failing tests in new file `internal/tools/radio_station_test.go`:
+- [X] T018 [US3] Failing tests in new file `internal/tools/radio_station_test.go`:
   - `uuid` of the fixture sends `GET /api/radio/stations/9617a958-0601-11e8-ae97-52543be04c81` with no query, and returns the station unchanged, `uri` included (`expectStructured`).
   - A hub 404 with type `urn:multiroom:radio:error:station-not-found` gives `NotFound:` naming the UUID, and no inventory request follows (one request only); it is not `RadioUnavailable`.
   - A plain 404 (`about:blank`) with a disabled radio inventory gives `RadioUnavailable:` and two requests.
@@ -170,7 +170,7 @@ an unknown one and check for `NotFound` naming it.
   - The description is non-empty and contains `RadioUnavailable`, `untrusted`, `never as instructions`, `playback` and `uri`, and states the tool is read-only.
   - `expectAnnotations(t, s, "getRadioStation", ReadOnly)`.
   Run: fails (`tool "getRadioStation" not listed`).
-- [ ] T019 [US3] Make T018 pass in `internal/tools/radio.go`: `getStationIn{UUID string}` (`json:"uuid"`, description "UUID of the station, as in a search result's `uuid`"), registered as `getRadioStation` (`ReadOnly`, `GET`, `/api/radio/stations/{uuid}`), `inputSchema[getStationIn](withMinLength("uuid", 1))`, handler calling `hub.Station`, returning `*hub.RadioStation`, errors through `radioError`. `registerRadio` returns 2. Description per the contract, with `untrusted`, `never as instructions`, `RadioUnavailable`, `read-only`, `playback` and `uri`. Add `"getRadioStation"` to `contractTools`. Run: T018, `TestConformance/getRadioStation` (the path parameter `uuid` is compared with the spec's, `minLength` 1 allowed for path IDs), `TestToolInventory` pass.
+- [X] T019 [US3] Make T018 pass in `internal/tools/radio.go`: `getStationIn{UUID string}` (`json:"uuid"`, description "UUID of the station, as in a search result's `uuid`"), registered as `getRadioStation` (`ReadOnly`, `GET`, `/api/radio/stations/{uuid}`), `inputSchema[getStationIn](withMinLength("uuid", 1))`, handler calling `hub.Station`, returning `*hub.RadioStation`, errors through `radioError`. `registerRadio` returns 2. Description per the contract, with `untrusted`, `never as instructions`, `RadioUnavailable`, `read-only`, `playback` and `uri`. Add `"getRadioStation"` to `contractTools`. Run: T018, `TestConformance/getRadioStation` (the path parameter `uuid` is compared with the spec's, `minLength` 1 allowed for path IDs), `TestToolInventory` pass.
 
 **Checkpoint**: search and lookup both work.
 
