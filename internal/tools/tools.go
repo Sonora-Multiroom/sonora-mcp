@@ -19,6 +19,7 @@ func Register(s *mcp.Server, client, speakClient *http.Client, hubURL string) in
 		registerGroups,
 		registerRoutes,
 		registerPlayback,
+		registerChimes,
 	}
 	n := 0
 	for _, r := range registrars {

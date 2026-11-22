@@ -22,7 +22,7 @@ checks every tool against the spec embedded in sonora-cli (`api.Spec`).
 
 **Primary Dependencies**: `github.com/modelcontextprotocol/go-sdk` v1.8.0 (MCP server, Streamable
 HTTP, JSON Schema via `github.com/google/jsonschema-go`); `github.com/Sonora-Multiroom/sonora-cli`
-v0.3.1 (`hub`, `api` packages; `api.Spec` is hub API 0.1.29); standard library otherwise (`net/http`, `flag`, `log/slog`,
+v0.4.1 (`hub`, `api` packages; `api.Spec` is hub API 0.1.35); standard library otherwise (`net/http`, `flag`, `log/slog`,
 `os/signal`) [Source: specs/001-go-rewrite/plan.md -> "Primary Dependencies"]
 [Source: specs/001-go-rewrite/tasks.md -> T073]
 
@@ -77,6 +77,7 @@ internal/
 │   ├── groups.go              # listGroups, getGroup, setGroupVolume, setGroupMute, setGroupEnabled, stopRoutesForGroup
 │   ├── routes.go              # listRoutes, getRoute, createRoute, deleteRoute, transferRoute, setRoutePause, setRouteVolume, stopAllRoutes
 │   ├── playback.go            # playback, getMasterMute, setMasterMute
+│   ├── chimes.go              # listChimes
 │   ├── tools.go               # Register(server, hubClient, hubURL): all 28 (logging is middleware)
 │   ├── fakehub_test.go        # httptest fake hub recording requests, canned responses
 │   ├── harness_test.go        # in-memory MCP client session + callTool/toolByName helpers
@@ -170,7 +171,7 @@ change without a MAJOR version (Principle II); new tools and optional fields are
 |---|---|---|---|---|
 | `listInputs` | `GET /api/v2/inputs` | `includeDisabled?: bool` | read-only | `{"inputs": [Input]}` |
 | `getInput` | `GET /api/v2/inputs/{inputId}` | `inputId` | read-only | `Input` |
-| `createInput` | `POST /api/v2/inputs` | `inputId` (pattern `^[a-zA-Z0-9\-_]{1,255}$`), `displayName`, `uri`, `enabled?: bool`, `autoRemove?: bool`, `defaultRouteVolume?: Volume` | state-changing | `Input` |
+| `createInput` | `POST /api/v2/inputs` | `inputId` (pattern `^[a-zA-Z0-9\-_]{1,255}$`), `displayName`, `uri`, `enabled?: bool`, `autoRemove?: bool`, `defaultRouteVolume?: Volume`, `defaultChime?: string` | state-changing | `Input` |
 | `deleteInput` | `DELETE /api/v2/inputs/{inputId}` | `inputId` | destructive | `{"deleted": true, "inputId"}` |
 | `setInputEnabled` | `PUT /api/v2/inputs/{inputId}/enabled` | `inputId`, `enabled: bool` | idempotent | `Input` |
 | `listOutputs` | `GET /api/v2/outputs` | `includeDisabled?: bool` | read-only | `{"outputs": [Output]}` |
@@ -187,13 +188,14 @@ change without a MAJOR version (Principle II); new tools and optional fields are
 | `stopRoutesForGroup` | `DELETE /api/v2/groups/{groupId}/routes` | `groupId` | destructive | `BulkStopResponse` |
 | `listRoutes` | `GET /api/v2/routes` | `status?: RouteStatus`, `inputId?`, `targetId?` | read-only | `{"routes": [Route]}` |
 | `getRoute` | `GET /api/v2/routes/{routeId}` | `routeId` | read-only | `Route` |
-| `createRoute` | `POST /api/v2/routes` | `inputId`, `targetId`, `targetType: TargetType`, `routeVolume?: Volume` | state-changing | `Route` |
+| `createRoute` | `POST /api/v2/routes` | `inputId`, `targetId`, `targetType: TargetType`, `routeVolume?: Volume`, `chime?: string` | state-changing | `Route` |
 | `deleteRoute` | `DELETE /api/v2/routes/{routeId}` | `routeId` | destructive | `{"deleted": true, "routeId"}` |
 | `transferRoute` | `POST /api/v2/routes/{routeId}/transfer` | `routeId`, `targetId`, `targetType: TargetType` | state-changing | `Route` |
 | `setRoutePause` | `PUT /api/v2/routes/{routeId}/pause` | `routeId`, `paused: bool` | idempotent | `Route` |
 | `setRouteVolume` | `PUT /api/v2/routes/{routeId}/volume` | `routeId`, `volume: Volume` | idempotent | `Route` |
 | `stopAllRoutes` | `DELETE /api/v2/routes` | — | destructive | `BulkStopResponse` |
-| `playback` | `POST /api/v2/play` | `uri`, `targetId`, `targetType: TargetType`, `displayName?`, `volume?: Volume` (sent as `outputVolume`), `routeVolume?: Volume` | state-changing | `PlaybackResponse` (`inputId`, `displayName`, `route`, `message`) |
+| `playback` | `POST /api/v2/play` | `uri`, `targetId`, `targetType: TargetType`, `displayName?`, `volume?: Volume` (sent as `outputVolume`), `routeVolume?: Volume`, `chime?: string` | state-changing | `PlaybackResponse` (`inputId`, `displayName`, `route`, `message`) |
+| `listChimes` | `GET /api/v2/chimes` | — | read-only | `{chimes: Chime[]}` |
 | `getMasterMute` | `GET /api/v2/master-mute` | — | read-only | `MasterMute` |
 | `setMasterMute` | `PUT /api/v2/master-mute` | `muted: bool` | idempotent | `MasterMute` |
 

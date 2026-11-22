@@ -22,12 +22,13 @@ type inputEnabledIn struct {
 }
 
 type createInputIn struct {
-	InputID            string `json:"inputId" jsonschema:"ID for the new input: 1-255 letters, digits, hyphens or underscores"`
-	DisplayName        string `json:"displayName" jsonschema:"Human-readable name for the input"`
-	URI                string `json:"uri" jsonschema:"Stream or file URI the input plays, e.g. an http(s) URL"`
-	Enabled            *bool  `json:"enabled,omitempty" jsonschema:"Whether the input starts enabled; the hub's default applies when omitted"`
-	AutoRemove         *bool  `json:"autoRemove,omitempty" jsonschema:"Whether the hub removes the input once its routes end; the hub's default applies when omitted"`
-	DefaultRouteVolume *int   `json:"defaultRouteVolume,omitempty" jsonschema:"Route volume, an integer from 0 to 100, for routes from this input that do not set their own; when omitted such routes follow the room's volume"`
+	InputID            string  `json:"inputId" jsonschema:"ID for the new input: 1-255 letters, digits, hyphens or underscores"`
+	DisplayName        string  `json:"displayName" jsonschema:"Human-readable name for the input"`
+	URI                string  `json:"uri" jsonschema:"Stream or file URI the input plays, e.g. an http(s) URL"`
+	Enabled            *bool   `json:"enabled,omitempty" jsonschema:"Whether the input starts enabled; the hub's default applies when omitted"`
+	AutoRemove         *bool   `json:"autoRemove,omitempty" jsonschema:"Whether the hub removes the input once its routes end; the hub's default applies when omitted"`
+	DefaultRouteVolume *int    `json:"defaultRouteVolume,omitempty" jsonschema:"Route volume, an integer from 0 to 100, for routes from this input that do not set their own; when omitted such routes follow the room's volume"`
+	DefaultChime       *string `json:"defaultChime,omitempty" jsonschema:"Chime for routes from this input whose request names none: an ID from listChimes, or none for no chime; when omitted the target's chime decides; a chime is a request, not a guarantee: the hub skips it when every target output is already playing"`
 }
 
 // inputDeleted confirms a deleted input; the hub answers 204 with no body.
@@ -46,7 +47,7 @@ func registerInputs(s *mcp.Server, client *http.Client, hubURL string) int {
 		Name: "listInputs",
 		Description: "List the hub's audio inputs (sources such as radio streams or line-ins). " +
 			"Only enabled inputs are returned unless includeDisabled is true. Read-only. " +
-			"Returns {\"inputs\": [...]} with each input's ID, name, URI, enabled and auto-remove flags, source (STATIC or EPHEMERAL), creation time, whether it can be paused and its default join mode (null if none).",
+			"Returns {\"inputs\": [...]} with each input's ID, name, URI, enabled and auto-remove flags, source (STATIC or EPHEMERAL), creation time, whether it can be paused and its default join mode (null if none) and its default chime (defaultChime, an ID or none) when one is set.",
 		Kind: ReadOnly, Method: "GET", Path: "/api/v2/inputs",
 	}, inputSchema[listInputsIn](),
 		func(ctx context.Context, in listInputsIn) (*inputList, error) {
@@ -60,7 +61,7 @@ func registerInputs(s *mcp.Server, client *http.Client, hubURL string) int {
 	add(s, toolSpec{
 		Name: "getInput",
 		Description: "Get one audio input by ID. Read-only. " +
-			"Returns the input's ID, name, URI, enabled and auto-remove flags, source, creation time, whether it can be paused and its default join mode (null if none); fails with NotFound if there is no such input.",
+			"Returns the input's ID, name, URI, enabled and auto-remove flags, source, creation time, whether it can be paused and its default join mode (null if none) and its default chime (defaultChime, an ID or none) when one is set; fails with NotFound if there is no such input.",
 		Kind: ReadOnly, Method: "GET", Path: "/api/v2/inputs/{inputId}",
 	}, inputSchema[inputIDIn](withMinLength("inputId", 1)),
 		func(ctx context.Context, in inputIDIn) (*hub.Input, error) {
@@ -84,11 +85,12 @@ func registerInputs(s *mcp.Server, client *http.Client, hubURL string) int {
 		Kind: StateChanging, Method: "POST", Path: "/api/v2/inputs",
 	}, inputSchema[createInputIn](
 		withMinLength("inputId", 1), withPattern("inputId", `^[a-zA-Z0-9\-_]{1,255}$`),
-		withMinLength("displayName", 1), withMinLength("uri", 1), withRange("defaultRouteVolume", 0, 100)),
+		withMinLength("displayName", 1), withMinLength("uri", 1), withRange("defaultRouteVolume", 0, 100), withPattern("defaultChime", `.*\S.*`)),
 		func(ctx context.Context, in createInputIn) (*hub.Input, error) {
 			return hub.CreateInput(ctx, client, hubURL, hub.CreateInputRequest{
 				InputID: in.InputID, DisplayName: in.DisplayName, URI: in.URI,
 				Enabled: in.Enabled, AutoRemove: in.AutoRemove, DefaultRouteVolume: in.DefaultRouteVolume,
+				DefaultChime: in.DefaultChime,
 			})
 		})
 

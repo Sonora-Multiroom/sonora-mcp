@@ -41,7 +41,7 @@ func registerOutputs(s *mcp.Server, client *http.Client, hubURL string) int {
 		Name: "listOutputs",
 		Description: "List the hub's audio outputs (speakers or zones). " +
 			"Only enabled outputs are returned unless includeDisabled is true. Read-only. " +
-			"Returns {\"outputs\": [...]} with each output's ID, name, volume (0-100), mute state, availability and enabled flag.",
+			"Returns {\"outputs\": [...]} with each output's ID, name, volume (0-100), mute state, availability and enabled flag, and the chime played before a route starting on it (chime, an ID or none) when one is set.",
 		Kind: ReadOnly, Method: "GET", Path: "/api/v2/outputs",
 	}, inputSchema[listOutputsIn](),
 		func(ctx context.Context, in listOutputsIn) (*outputList, error) {
@@ -55,7 +55,7 @@ func registerOutputs(s *mcp.Server, client *http.Client, hubURL string) int {
 	add(s, toolSpec{
 		Name: "getOutput",
 		Description: "Get one audio output by ID. Read-only. " +
-			"Returns the output's ID, name, volume (0-100), mute state, availability and enabled flag; fails with NotFound if there is no such output.",
+			"Returns the output's ID, name, volume (0-100), mute state, availability and enabled flag, and the chime played before a route starting on it (chime, an ID or none) when one is set; fails with NotFound if there is no such output.",
 		Kind: ReadOnly, Method: "GET", Path: "/api/v2/outputs/{outputId}",
 	}, inputSchema[outputIDIn](withMinLength("outputId", 1)),
 		func(ctx context.Context, in outputIDIn) (*hub.Output, error) {

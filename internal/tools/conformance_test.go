@@ -275,7 +275,7 @@ var contractTools = []string{
 	"listGroups", "getGroup", "setGroupVolume", "setGroupMute", "setGroupEnabled",
 	"listRoutes", "getRoute", "createRoute", "deleteRoute", "transferRoute", "setRoutePause",
 	"setRouteVolume", "stopRoutesForOutput", "stopRoutesForGroup", "stopAllRoutes",
-	"playback", "getMasterMute", "setMasterMute",
+	"playback", "getMasterMute", "setMasterMute", "listChimes",
 	"speak", "listTtsVoices", "getTtsCacheStats", "clearTtsCache",
 }
 

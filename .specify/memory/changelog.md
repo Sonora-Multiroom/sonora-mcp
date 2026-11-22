@@ -2,6 +2,19 @@
 
 ## Merged Features Log
 
+### Route chime — 2026-11-22
+**Branch:** route-chime
+**Spec:** [specs/tiny/route-chime.md](../../specs/tiny/route-chime.md)
+
+- `chime` (optional) on `playback` and `createRoute`, `defaultChime` on `createInput`, and the
+  chime settings shown by the output, group and input read tools (HUB-040, API 0.1.34).
+- New read-only tool `listChimes` (`GET /api/v2/chimes`), 32 → 33 tools. MINOR release: nothing
+  existing got stricter.
+- sonora-cli v0.3.4 → v0.4.1, so conformance now checks against hub API 0.1.35. `hub.Group` now
+  reports `system`, and the input results carry HUB-041's `origin`, `playable` and
+  `unplayableReason` (decoded by `hub.Input` since v0.4.1; v0.3.7 and v0.4.0 lacked them, which
+  failed conformance for the four tools that return an input). Both are additive output fields.
+
 ### Stop routes in bulk — 2026-10-27
 **Branch:** stop-routes
 **Spec:** [specs/tiny/stop-routes.md](../../specs/tiny/stop-routes.md)
