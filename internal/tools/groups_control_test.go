@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-const disabledGroupJSON = `{"groupId":"downstairs","displayName":"Downstairs","outputIds":["kitchen","living-room"],"muted":false,"enabled":false}`
+const disabledGroupJSON = `{"groupId":"downstairs","displayName":"Downstairs","outputIds":["kitchen","living-room"],"muted":false,"enabled":false,"system":false}`
 
 func TestSetGroupVolume(t *testing.T) {
 	hub := newFakeHub(t)

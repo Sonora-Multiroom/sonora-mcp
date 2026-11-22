@@ -338,7 +338,7 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
 |---|---|---|
 | `listInputs` | `includeDisabled?` | read-only |
 | `getInput` | `inputId` | read-only |
-| `createInput` | `inputId`, `displayName`, `uri`, `enabled?`, `autoRemove?`, `defaultRouteVolume?` | state-changing |
+| `createInput` | `inputId`, `displayName`, `uri`, `enabled?`, `autoRemove?`, `defaultRouteVolume?`, `defaultChime?` | state-changing |
 | `deleteInput` | `inputId` | destructive |
 | `setInputEnabled` | `inputId`, `enabled` | idempotent |
 | `listOutputs` | `includeDisabled?` | read-only |
@@ -355,13 +355,14 @@ The contract to preserve. Inputs marked `?` are optional. Target type is `SINGLE
 | `stopRoutesForGroup` | `groupId` | destructive |
 | `listRoutes` | `status?`, `inputId?`, `targetId?` | read-only |
 | `getRoute` | `routeId` | read-only |
-| `createRoute` | `inputId`, `targetId`, `targetType`, `routeVolume?` | state-changing |
+| `createRoute` | `inputId`, `targetId`, `targetType`, `routeVolume?`, `chime?` | state-changing |
 | `deleteRoute` | `routeId` | destructive |
 | `transferRoute` | `routeId`, `targetId`, `targetType` | state-changing |
 | `setRoutePause` | `routeId`, `paused` | idempotent |
 | `setRouteVolume` | `routeId`, `volume` | idempotent |
 | `stopAllRoutes` | — | destructive |
-| `playback` | `uri`, `targetId`, `targetType`, `displayName?`, `volume?`, `routeVolume?` | state-changing |
+| `playback` | `uri`, `targetId`, `targetType`, `displayName?`, `volume?`, `routeVolume?`, `chime?` | state-changing |
+| `listChimes` | — | read-only |
 | `getMasterMute` | — | read-only |
 | `setMasterMute` | `muted` | idempotent |
 
@@ -388,6 +389,17 @@ Route volume (hub 0.1.29) [Source: specs/tiny/route-volume.md]:
   `createInput`), else the route follows its outputs' volume.
 - `setRouteVolume` changes a route's own volume, also on a route started without one, and no
   output's volume. A route volume can be changed but never cleared.
+
+Route chime (hub 0.1.34, HUB-040) [Source: specs/tiny/route-chime.md]:
+
+- `chime` on `playback` and `createRoute` and `defaultChime` on `createInput` are optional strings
+  (not blank), sent as given. Omitted, the hub decides: the input's default chime, then the
+  target's. `none` means no chime whatever those say. An unknown id is the hub's 400.
+- `listChimes` (read-only, no arguments) returns `{"chimes": [{"id", "durationMillis"}]}`; `none` is
+  never listed. The descriptions point at it and do not list ids, which depend on the hub's files.
+- The output, group and input read tools show `chime` / `defaultChime` when set (`none` is a
+  value) and omit them otherwise. A chime is a request: the hub skips it when every target output
+  is already playing.
 
 ### Key Entities
 

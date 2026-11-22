@@ -22,6 +22,7 @@ type playbackIn struct {
 	DisplayName *string `json:"displayName,omitempty" jsonschema:"Name for the temporary input the hub creates; the hub chooses one when omitted"`
 	Volume      *int    `json:"volume,omitempty" jsonschema:"Volume to set on the target output or group before playing, an integer from 0 to 100; it is the room's own volume and stays after playback ends; unchanged when omitted"`
 	RouteVolume *int    `json:"routeVolume,omitempty" jsonschema:"Volume of this playback only, an integer from 0 to 100; the room's volume is not changed and its volume control does not reach this playback, while mute, master mute and each output's gain still apply; use it for announcements and alerts; when omitted the playback follows the room's volume"`
+	Chime       *string `json:"chime,omitempty" jsonschema:"Chime to play before this playback: an ID from listChimes, or none for no chime whatever the input's or the target's settings say; when omitted the hub decides (the input's default chime, then the target's); a chime is a request, not a guarantee: the hub skips it when every target output is already playing"`
 }
 
 func registerPlayback(s *mcp.Server, client *http.Client, hubURL string) int {
@@ -52,11 +53,11 @@ func registerPlayback(s *mcp.Server, client *http.Client, hubURL string) int {
 			"fails with NotFound if the target does not exist, Conflict if the hub refuses the route in its current state (for example the target is disabled; the reason is in parentheses), and SourceUnreachable if the hub cannot open the URI.",
 		Kind: StateChanging, Method: "POST", Path: "/api/v2/play",
 	}, inputSchema[playbackIn](withMinLength("uri", 1), withMinLength("targetId", 1),
-		withEnum("targetType", targetTypes...), withRange("volume", 0, 100), withRange("routeVolume", 0, 100)),
+		withEnum("targetType", targetTypes...), withRange("volume", 0, 100), withRange("routeVolume", 0, 100), withPattern("chime", `.*\S.*`)),
 		func(ctx context.Context, in playbackIn) (*hub.PlaybackResponse, error) {
 			return hub.Playback(ctx, client, hubURL, hub.PlaybackRequest{
 				URI: in.URI, TargetID: in.TargetID, TargetType: in.TargetType,
-				DisplayName: in.DisplayName, OutputVolume: in.Volume, RouteVolume: in.RouteVolume,
+				DisplayName: in.DisplayName, OutputVolume: in.Volume, RouteVolume: in.RouteVolume, Chime: in.Chime,
 			})
 		})
 

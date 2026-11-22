@@ -25,10 +25,11 @@ type routeIDIn struct {
 var targetTypes = []string{"SINGLE_OUTPUT", "OUTPUT_GROUP"}
 
 type createRouteIn struct {
-	InputID     string `json:"inputId" jsonschema:"ID of the input to play, as returned by listInputs"`
-	TargetID    string `json:"targetId" jsonschema:"ID of the output or group to play to"`
-	TargetType  string `json:"targetType" jsonschema:"SINGLE_OUTPUT if targetId is an output, OUTPUT_GROUP if it is a group"`
-	RouteVolume *int   `json:"routeVolume,omitempty" jsonschema:"Volume of this playback only, an integer from 0 to 100; the room's volume is not changed and its volume control does not reach this playback, while mute, master mute and each output's gain still apply; use it for announcements and alerts; when omitted the input's default route volume applies, else the room's volume"`
+	InputID     string  `json:"inputId" jsonschema:"ID of the input to play, as returned by listInputs"`
+	TargetID    string  `json:"targetId" jsonschema:"ID of the output or group to play to"`
+	TargetType  string  `json:"targetType" jsonschema:"SINGLE_OUTPUT if targetId is an output, OUTPUT_GROUP if it is a group"`
+	RouteVolume *int    `json:"routeVolume,omitempty" jsonschema:"Volume of this playback only, an integer from 0 to 100; the room's volume is not changed and its volume control does not reach this playback, while mute, master mute and each output's gain still apply; use it for announcements and alerts; when omitted the input's default route volume applies, else the room's volume"`
+	Chime       *string `json:"chime,omitempty" jsonschema:"Chime to play before this route: an ID from listChimes, or none for no chime whatever the input's or the target's settings say; when omitted the hub decides (the input's default chime, then the target's); a chime is a request, not a guarantee: the hub skips it when every target output is already playing"`
 }
 
 type transferRouteIn struct {
@@ -91,11 +92,11 @@ func registerRoutes(s *mcp.Server, client *http.Client, hubURL string) int {
 			"fails with NotFound if the input or target does not exist, Conflict if the hub refuses the route in its current state (the reason in parentheses says why: a disabled input, output or group, the route limit, or the input already playing there; change that state and retry), and RouteFailed if the hub cannot start playback.",
 		Kind: StateChanging, Method: "POST", Path: "/api/v2/routes",
 	}, inputSchema[createRouteIn](withMinLength("inputId", 1), withMinLength("targetId", 1), withEnum("targetType", targetTypes...),
-		withRange("routeVolume", 0, 100)),
+		withRange("routeVolume", 0, 100), withPattern("chime", `.*\S.*`)),
 		func(ctx context.Context, in createRouteIn) (*hub.Route, error) {
 			return hub.CreateRoute(ctx, client, hubURL, hub.CreateRouteRequest{
 				InputID: in.InputID, TargetID: in.TargetID, TargetType: in.TargetType,
-				RouteVolume: in.RouteVolume,
+				RouteVolume: in.RouteVolume, Chime: in.Chime,
 			})
 		})
 

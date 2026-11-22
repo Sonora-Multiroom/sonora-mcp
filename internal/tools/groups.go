@@ -41,7 +41,7 @@ func registerGroups(s *mcp.Server, client *http.Client, hubURL string) int {
 		Name: "listGroups",
 		Description: "List the hub's output groups (sets of outputs controlled together). " +
 			"Only enabled groups are returned unless includeDisabled is true. Read-only. " +
-			"Returns {\"groups\": [...]} with each group's ID, name, member output IDs, mute state and enabled flag.",
+			"Returns {\"groups\": [...]} with each group's ID, name, member output IDs, mute state and enabled flag, and the chime played before a route sent to the group (chime, an ID or none) when one is set.",
 		Kind: ReadOnly, Method: "GET", Path: "/api/v2/groups",
 	}, inputSchema[listGroupsIn](),
 		func(ctx context.Context, in listGroupsIn) (*groupList, error) {
@@ -55,7 +55,7 @@ func registerGroups(s *mcp.Server, client *http.Client, hubURL string) int {
 	add(s, toolSpec{
 		Name: "getGroup",
 		Description: "Get one output group by ID. Read-only. " +
-			"Returns the group's ID, name, member output IDs, mute state and enabled flag; fails with NotFound if there is no such group.",
+			"Returns the group's ID, name, member output IDs, mute state and enabled flag, and the chime played before a route sent to the group (chime, an ID or none) when one is set; fails with NotFound if there is no such group.",
 		Kind: ReadOnly, Method: "GET", Path: "/api/v2/groups/{groupId}",
 	}, inputSchema[groupIDIn](withMinLength("groupId", 1)),
 		func(ctx context.Context, in groupIDIn) (*hub.Group, error) {
