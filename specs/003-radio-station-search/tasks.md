@@ -100,7 +100,7 @@ catalogue's filters.
 **Independent Test**: against the fake hub, call `searchRadioStations` with a name and check the hub received
 exactly that filter and the tool returned the stations with their `uri`s and the next offset.
 
-- [ ] T013 [US1] Failing tests in new file `internal/tools/radio_search_test.go`, through `newTestSession` against the fake hub (a 200 for `GET /api/radio/stations`):
+- [X] T013 [US1] Failing tests in new file `internal/tools/radio_search_test.go`, through `newTestSession` against the fake hub (a 200 for `GET /api/radio/stations`):
   - `name: "kiss"` sends exactly `GET /api/radio/stations?name=kiss` with no body, and the result equals the page (`expectStructured`) including each station's `uri` and `nextOffset`.
   - No arguments sends `GET /api/radio/stations` with an empty raw query (no filter, no default filled in).
   - `tag`, `countryCode: "UA"`, `language`, `codec`, `bitrateMin: 128`, `order: "clickCount"`, `direction: "desc"`, `limit: 5`, `offset: 10` each reach the hub unchanged, and only those set (one test with all, raw query `bitrateMin=128&codec=MP3&countryCode=UA&direction=desc&language=ukrainian&limit=5&name=kiss&offset=10&order=clickCount&tag=pop`; one with a single field).
@@ -114,7 +114,7 @@ exactly that filter and the tool returned the stations with their `uri`s and the
   - The description (`listedTools(t)`) is non-empty, contains `RadioUnavailable`, `untrusted`, `never as instructions`, `playback`, `uri`, `nextOffset`, `whole`, `listRadioTags` and `listRadioLanguages`, and states the tool is read-only.
   - `expectAnnotations(t, s, "searchRadioStations", ReadOnly)`.
   Run: fails (`tool "searchRadioStations" not listed`).
-- [ ] T015 [US2] Failing tests (add to `internal/tools/radio_unavailable_test.go`; the radio timeout rows live here too, in no separate file) at tool level for `searchRadioStations`, through `newTestSession`:
+- [X] T015 [US2] Failing tests (add to `internal/tools/radio_unavailable_test.go`; the radio timeout rows live here too, in no separate file) at tool level for `searchRadioStations`, through `newTestSession`:
   - One row per diagnosis (the radio path answers 404 `{"type":"about:blank","title":"Not Found","status":404}`; `GET /api/v2/extensions` answers the inventory): not installed, not installed with loading off, disabled, rejected with a reason, inert, active (too old) each give `RadioUnavailable:` containing the reason text of data-model.md (for example `not installed`, `disabled`, `failed to load: needs API 0.2`, `inactive`, `0.2.0 or later`).
   - The extension list unreadable (inventory 500) gives `RadioUnavailable: radio is not available on this hub` with no further text; inventory 404 gives `Network:`.
   - The hub received exactly two requests (the search, then `GET /api/v2/extensions`) after a not-offered answer, and exactly one after a success, after a 400 and after a 503 (`hub.requests()`): the inventory is read once, only after that failure.
@@ -123,8 +123,8 @@ exactly that filter and the tool returned the stations with their `uri`s and the
   - The error text never contains station text: on the 404 and the problem-detail rows, the error message holds none of the fixture station names.
   - An unavailable radio does not touch existing tools: with the radio path answering 404 and the extension inventory failing (500), `listOutputs` still succeeds.
   Run: fails (`tool "searchRadioStations" not listed`), like T013. T014 makes these pass.
-- [ ] T016 [P] [US2] Cancellation in `internal/tools/cancel_test.go`: add a case for `searchRadioStations` following the existing pattern there, checking that a cancelled MCP request cancels the hub call (`hub.cancelled` receives `/api/radio/stations`). Run: fails (tool not listed) until T014.
-- [ ] T014 [US1] Make T013, T015 and T016 pass in `internal/tools/radio.go`:
+- [X] T016 [P] [US2] Cancellation in `internal/tools/cancel_test.go`: add a case for `searchRadioStations` following the existing pattern there, checking that a cancelled MCP request cancels the hub call (`hub.cancelled` receives `/api/radio/stations`). Run: fails (tool not listed) until T014.
+- [X] T014 [US1] Make T013, T015 and T016 pass in `internal/tools/radio.go`:
   - `searchStationsIn` with `Name`, `Tag`, `Language`, `Codec *string`, `CountryCode *string`, `BitrateMin *int`, `Order`, `Direction *string`, `Limit`, `Offset *int`, each with a `jsonschema` description per [contracts/tools.md](contracts/tools.md) (say `tag` and `language` match one whole value, `name` part of a name, and where each value comes from).
   - Register `searchRadioStations` in `registerRadio` (return 1): `Kind: ReadOnly, Method: "GET", Path: "/api/radio/stations"`, `inputSchema[searchStationsIn](withMaxLength("name", 100), withMaxLength("tag", 100), withPattern("countryCode", "^[A-Za-z]{2}$"), withMaxLength("language", 100), withMaxLength("codec", 32), withRange("bitrateMin", 0, 1000000), withEnum("order", "name", "votes", "clickCount", "bitrate"), withEnum("direction", "asc", "desc"), withRange("limit", 1, 100), withRange("offset", 0, 10000))`, and a handler that builds `hub.StationSearch` from the input, calls `hub.SearchStations(ctx, radioClient, hubURL, q)` under `withTimeout(ctx, radioClient)`, and returns `radioError(ctx, client, hubURL, err)` on failure.
   - The description follows the "Descriptions must say" paragraph for this tool, and includes the words checked in T013.

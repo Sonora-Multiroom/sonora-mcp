@@ -44,6 +44,7 @@ type fakeRoute struct {
 	status int
 	body   string
 	delay  time.Duration
+	header map[string]string
 }
 
 // fakeHub is an httptest server standing in for the Multiroom Audio Hub. It
@@ -81,6 +82,13 @@ func (h *fakeHub) handleDelayed(method, path string, status int, body string, de
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.routes[method+" "+path] = fakeRoute{status: status, body: body, delay: delay}
+}
+
+// handleHeaders is handle with extra response headers, such as Retry-After.
+func (h *fakeHub) handleHeaders(method, path string, status int, body string, header map[string]string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.routes[method+" "+path] = fakeRoute{status: status, body: body, header: header}
 }
 
 // requests returns a copy of every request received so far.
@@ -148,6 +156,9 @@ func (h *fakeHub) serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	for k, v := range route.header {
+		w.Header().Set(k, v)
+	}
 	w.WriteHeader(route.status)
 	_, _ = io.WriteString(w, route.body)
 }
