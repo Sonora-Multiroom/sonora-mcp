@@ -72,7 +72,7 @@
 
 - `cmd/sonora-mcp`: entry point (config, server, signal handling, exit codes).
 - `internal/config`, `internal/version`: flags and the build version.
-- `internal/tools`: the 33 tools, schemas, error categories, logging middleware, and the fake
+- `internal/tools`: the 38 tools, schemas, error categories, logging middleware, and the fake
   hub, conformance and architecture tests.
 - `internal/server`: `/mcp`, `/health`, graceful shutdown.
 - `deploy/pi/install.sh`: the Pi installer with the embedded systemd unit.
@@ -89,6 +89,10 @@
 
 ## Recent Changes
 
+- specs/003-radio-station-search: `searchRadioStations`, `getRadioStation`, `listRadioCountries`,
+  `listRadioLanguages` and `listRadioTags` (33 → 38 tools, all read-only), the `RadioUnavailable` error
+  category (the shared hub client diagnoses the reason), the hub's refused parameter named in a `Validation`
+  message, and a third client, `radioClient` (`hub.RadioTimeout`, 10 s), passed to `tools.Register`.
 - specs/002-tts-tools: `speak`, `listTtsVoices`, `getTtsCacheStats` and `clearTtsCache` (28 → 32
   tools) and the `TtsUnavailable` error category, whose reason the shared hub client diagnoses;
   `speak` has its own 15 s client.
