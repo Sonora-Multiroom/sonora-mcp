@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/Sonora-Multiroom/sonora-cli/hub"
 )
@@ -26,6 +27,10 @@ const (
 	CategoryHubError           = "HubError"
 	CategoryInternal           = "Internal"
 )
+
+// radioProblemPrefix starts the type of every problem the hub's radio
+// extension reports.
+const radioProblemPrefix = "urn:multiroom:radio:error:"
 
 // categoryError is a tool failure: a category and a message for the agent,
 // wrapping the underlying error.
@@ -86,7 +91,9 @@ func classify(err error) (category, message string) {
 	// Keep the hub's own explanation where ClassifyError replaces it with a
 	// generic message (FR-010).
 	var apiErr *hub.APIError
-	if errors.As(err, &apiErr) && apiErr.Detail != "" && message != apiErr.Detail {
+	// A radio problem's message is already built from its detail.
+	if errors.As(err, &apiErr) && apiErr.Detail != "" && message != apiErr.Detail &&
+		!strings.HasPrefix(apiErr.Type, radioProblemPrefix) {
 		message += ": " + apiErr.Detail
 	}
 	// Name why the hub refused a route, so the agent knows which state to

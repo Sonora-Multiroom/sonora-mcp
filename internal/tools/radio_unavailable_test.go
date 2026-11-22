@@ -175,15 +175,20 @@ func TestSearchRadioStationsProblemMapping(t *testing.T) {
 		header   map[string]string
 		prefix   string
 		contains []string
+		want     string // the whole error text, or "" to skip
 	}{
 		{"invalid parameter", 400, radioProblemJSON("invalid-parameter", 400, "countryCode must be two letters", "countryCode"), nil,
-			"Validation:", []string{"countryCode must be two letters", "countryCode"}},
+			"Validation:", []string{"countryCode must be two letters", "countryCode"},
+			"Validation: countryCode must be two letters (parameter countryCode)"},
 		{"catalogue unavailable with delay", 503, radioProblemJSON("catalogue-unavailable", 503, "down", ""), map[string]string{"Retry-After": "30"},
-			"ServiceUnavailable:", []string{"retry in 30 s"}},
+			"ServiceUnavailable:", []string{"retry in 30 s"},
+			"ServiceUnavailable: the radio catalogue is unavailable; retry in 30 s"},
 		{"catalogue unavailable without delay", 503, radioProblemJSON("catalogue-unavailable", 503, "down", ""), nil,
-			"ServiceUnavailable:", []string{"retry later"}},
+			"ServiceUnavailable:", []string{"retry later"},
+			"ServiceUnavailable: the radio catalogue is unavailable; retry later"},
 		{"catalogue bad answer", 502, radioProblemJSON("catalogue-bad-answer", 502, "not JSON", ""), nil,
-			"SourceUnreachable:", nil},
+			"SourceUnreachable:", nil,
+			"SourceUnreachable: the radio catalogue gave an unusable answer: not JSON"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -194,6 +199,9 @@ func TestSearchRadioStationsProblemMapping(t *testing.T) {
 			res := callTool(t, s, "searchRadioStations", map[string]any{})
 
 			expectErrorPrefix(t, res, tt.prefix)
+			if tt.want != "" && errorText(res) != tt.want {
+				t.Errorf("error = %q, want %q", errorText(res), tt.want)
+			}
 			for _, want := range tt.contains {
 				if !strings.Contains(errorText(res), want) {
 					t.Errorf("error = %q, want it to contain %q", errorText(res), want)
@@ -228,4 +236,12 @@ func TestUnavailableRadioLeavesOtherToolsAlone(t *testing.T) {
 
 	expectErrorPrefix(t, callTool(t, s, "searchRadioStations", map[string]any{}), "RadioUnavailable:")
 	expectOK(t, callTool(t, s, "listOutputs", map[string]any{}))
+}
+
+func TestRadioToolsWithoutAClientTimeout(t *testing.T) {
+	h := newFakeHub(t)
+	h.handle("GET", radioStationsPath, 200, radioStationPageJSON)
+	s := newTestSessionRadio(t, h.URL, hub.NewClient(), &http.Client{})
+
+	expectStructured(t, callTool(t, s, "searchRadioStations", map[string]any{}), radioStationPageJSON)
 }

@@ -144,3 +144,14 @@ Date: 2026-11-22.
 | SC-007 | live steps 1 and 2 (find by name, read details) and T028 (played through `playback` with the returned `uri`) |
 
 No requirement is uncovered. Not done by design: no release tag (the next release is v1.4.0 and `install.sh`'s `RELEASE_TAG` is bumped in the tagged commit, when the user asks).
+
+## Code review follow-up
+
+Date: 2026-11-22. Four findings from a review of the branch, each checked against the code first.
+
+- Duplicated hub text in radio errors: a radio problem's message is built from its detail by the shared client, so `classify` no longer appends the detail again (`radioProblemPrefix`). The mapping test now compares whole messages.
+- `withTimeout` gave a client with no timeout a context that had already expired; it now adds no bound for a zero timeout. `TestRadioToolsWithoutAClientTimeout` failed first with `Timeout`.
+- `getRadioStation` with `.` or `..` was sent on as another path and reported as unavailable or a network fault; it is now a `Validation` error naming `uuid`, with no hub request.
+- `newTestSessionClients` passed `speakClient` as the radio client; it passes `client`.
+
+The first three tests failed before the fix. `GOWORK=off`: `gofmt -l .` empty, `go vet ./...` and `go test ./... -count=1` exit 0.

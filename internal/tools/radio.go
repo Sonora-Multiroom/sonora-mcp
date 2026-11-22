@@ -100,6 +100,11 @@ func registerRadio(s *mcp.Server, client, radioClient *http.Client, hubURL strin
 		Kind: ReadOnly, Method: "GET", Path: "/api/radio/stations/{uuid}",
 	}, inputSchema[getStationIn](withMinLength("uuid", 1)),
 		func(ctx context.Context, in getStationIn) (*hub.RadioStation, error) {
+			// "." and ".." are not escaped in a path, so they would name another
+			// resource; no UUID looks like them.
+			if in.UUID == "." || in.UUID == ".." {
+				return nil, &categoryError{category: CategoryValidation, message: "uuid is not a station UUID (parameter uuid)"}
+			}
 			ctx, cancel := withTimeout(ctx, radioClient)
 			defer cancel()
 			res, err := hub.Station(ctx, radioClient, hubURL, in.UUID)

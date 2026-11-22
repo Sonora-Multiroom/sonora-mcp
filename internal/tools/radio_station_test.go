@@ -109,3 +109,20 @@ func TestGetRadioStationMetadata(t *testing.T) {
 		}
 	}
 }
+
+func TestGetRadioStationRejectsDotSegments(t *testing.T) {
+	for _, uuid := range []string{".", ".."} {
+		t.Run(uuid, func(t *testing.T) {
+			h := newFakeHub(t)
+			s := newTestSession(t, h.URL, nil)
+
+			res := callTool(t, s, "getRadioStation", map[string]any{"uuid": uuid})
+
+			expectErrorPrefix(t, res, "Validation:")
+			if !strings.Contains(errorText(res), "uuid") {
+				t.Errorf("error = %q, want it to name uuid", errorText(res))
+			}
+			h.assertNoRequests(t)
+		})
+	}
+}

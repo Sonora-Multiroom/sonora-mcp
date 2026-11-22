@@ -50,8 +50,12 @@ type cacheCleared struct {
 }
 
 // withTimeout bounds one TTS call, and the diagnosis that may follow it, by
-// the timeout of the client that makes the call.
+// the timeout of the client that makes the call. A client with no timeout adds
+// no bound of its own.
 func withTimeout(ctx context.Context, c *http.Client) (context.Context, context.CancelFunc) {
+	if c.Timeout <= 0 {
+		return context.WithCancel(ctx)
+	}
 	return context.WithTimeout(ctx, c.Timeout)
 }
 
