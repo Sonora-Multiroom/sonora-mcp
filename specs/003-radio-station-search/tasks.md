@@ -44,7 +44,7 @@ catalogue lists (P2).
 
 ## Phase 1: Setup
 
-- [ ] T001 Run the baseline gate on the branch, before any change: `gofmt -l .` (empty), `go vet ./...`, `go test ./...`. Expected: all pass, 33 tools, `go.mod` pins `github.com/Sonora-Multiroom/sonora-cli v0.4.1`. Record the result in `specs/003-radio-station-search/verification.md` (create it with a "Baseline" heading, the date and the three outcomes). No `go get`: v0.4.1 already has the radio client ([research](research.md) R1).
+- [X] T001 Run the baseline gate on the branch, before any change: `gofmt -l .` (empty), `go vet ./...`, `go test ./...`. Expected: all pass, 33 tools, `go.mod` pins `github.com/Sonora-Multiroom/sonora-cli v0.4.1`. Record the result in `specs/003-radio-station-search/verification.md` (create it with a "Baseline" heading, the date and the three outcomes). No `go get`: v0.4.1 already has the radio client ([research](research.md) R1).
 
 ---
 
@@ -53,7 +53,7 @@ catalogue lists (P2).
 **Purpose**: the error category and mapping, the not-offered diagnosis, the schema helper, the `Register`
 signature, the conformance changes, and the shared fixtures. All five tools depend on these.
 
-- [ ] T002 [P] Failing tests in `internal/tools/errors_test.go` (extend the existing table) for `classify`/`toolError`:
+- [X] T002 [P] Failing tests in `internal/tools/errors_test.go` (extend the existing table) for `classify`/`toolError`:
   - `*hub.RadioUnavailableError` with each of `DiagnosisNotInstalled` (with and without `LoadingDisabled`), `DiagnosisDisabled`, `DiagnosisRejected` (with `Reason`), `DiagnosisInert` and `DiagnosisVersionMismatch` (with `Version`) gives `RadioUnavailable: <its Error()>`.
   - `DiagnosisUnknown` with `Cause: context.DeadlineExceeded`, and again with `Cause: &hub.DecodeError{...}`, gives `RadioUnavailable: radio is not available on this hub`, not `Timeout` or `MalformedResponse` (the diagnosed error is checked first; research R2).
   - `DiagnosisHubAddress` with `BaseURL` gives `Network: <its Error()>` exactly once, with no `: <err>` suffix repeating it.
@@ -64,28 +64,28 @@ signature, the conformance changes, and the shared fixtures. All five tools depe
   - A `*hub.NotFoundError{Resource: "station", ID: "<uuid>"}` gives `NotFound:` naming the UUID.
   - An `*hub.APIError` with an unknown radio `Type` and status 500 gives `HubError:`.
   Run: the new rows fail to compile or fail (no `CategoryRadioUnavailable` yet).
-- [ ] T003 Make T002 pass in `internal/tools/errors.go`:
+- [X] T003 Make T002 pass in `internal/tools/errors.go`:
   - add `CategoryRadioUnavailable = "RadioUnavailable"` to the category constants;
   - in `classify`, check `*hub.RadioUnavailableError` next to the `*hub.TTSUnavailableError` check, before the decode and timeout checks: `DiagnosisHubAddress` gives `CategoryNetwork` with `Error()` as is, any other diagnosis gives `CategoryRadioUnavailable` with `Error()`;
   - map `hub.ClassRadioUnavailable` to `CategoryRadioUnavailable` in the switch;
   - after the existing `Reason` suffix, append ` (parameter <name>)` when `apiErr.Parameter != ""` (research R2).
   Check the existing TTS and route rows still pass.
-- [ ] T004 [P] Failing test in `internal/tools/radio_unavailable_test.go` (new file) `TestRadioError`, for the helper `radioError(ctx, client, hubURL, err)`, against a fake hub serving `GET /api/v2/extensions`:
+- [X] T004 [P] Failing test in `internal/tools/radio_unavailable_test.go` (new file) `TestRadioError`, for the helper `radioError(ctx, client, hubURL, err)`, against a fake hub serving `GET /api/v2/extensions`:
   - With `&hub.RadioNotOfferedError{}` and the inventory `inventoryJSON(true, `{"id":"radio","status":"DISABLED","rejectionReason":null}`)` the result is a `*hub.RadioUnavailableError` with `DiagnosisDisabled`. One table row each for: not installed (`inventoryJSON(true, "")`), not installed with loading off (`inventoryJSON(false, "")`, `LoadingDisabled` true), rejected (`{"id":"radio","status":"REJECTED","rejectionReason":"needs API 0.2"}`, `Reason` "needs API 0.2"), inert (`"INERT"`), active (`"ACTIVE"`, which gives `DiagnosisVersionMismatch`), inventory 404 (`DiagnosisHubAddress`), inventory 500 (`DiagnosisUnknown`). Use `hub.ExtensionDiagnosis` as the field type. Assert exactly one request, `GET /api/v2/extensions`.
   - A wrapped `errors.Join(errors.New("x"), &hub.RadioNotOfferedError{})` is diagnosed too.
   - Any other error (`&hub.APIError{StatusCode: 400}`) is returned unchanged and the hub receives no request.
   Run: fails to compile (`radioError` undefined).
-- [ ] T005 Create `internal/tools/radio.go` with package doc-comment style as `tts.go`, and `radioError(ctx context.Context, client *http.Client, hubURL string, err error) error`: for an error matching `*hub.RadioNotOfferedError` (`errors.As`) return `hub.DiagnoseRadioUnavailable(ctx, client, hubURL)`, otherwise `err`. Make T004 pass.
-- [ ] T006 [P] Failing test in `internal/tools/schema_test.go` for a new `withMaxLength(name string, n int) schemaOption`: it sets `maxLength` on a string property of an inferred schema, and panics for a property the struct lacks (like the other helpers). Run: fails to compile.
-- [ ] T007 Add `withMaxLength` to `internal/tools/schema.go` (sets `Schema.MaxLength` on the named property) and make T006 pass.
-- [ ] T008 Add the radio client to `Register`. Change `Register(s, client, speakClient, hubURL)` to `Register(s, client, speakClient, radioClient, hubURL)` in `internal/tools/tools.go` (doc comment: "radioClient serves the radio tools, whose bound is longer than the standard one"), add `n += registerRadio(s, client, radioClient, hubURL)` after `registerTTS`, and add `func registerRadio(s *mcp.Server, client, radioClient *http.Client, hubURL string) int { return 0 }` to `internal/tools/radio.go` (the stub grows in T014, T019 and T021). Update every caller: `cmd/sonora-mcp/main.go` (`radioClient := hub.NewClientWithTimeout(hub.RadioTimeout)`, passed in), `internal/tools/harness_test.go` (`newTestSessionClients` passes `speakClient` as the radio client too; add `newTestSessionRadio(t, hubURL, client, radioClient *http.Client)` that sets the radio client separately and the standard client for the rest), `internal/tools/conformance_test.go` (`TestRegisterCount` passes `nil, nil, nil`), `internal/server/server_test.go` (two calls) and `internal/server/shutdown_test.go`. Gate: `gofmt -l .`, `go vet ./...`, `go test ./...` all pass, still 33 tools.
-- [ ] T009 In `internal/tools/conformance_test.go`: add `"countries", "languages"` to `listEnvelopes`, and add `"maxLength"` to `constraintKeys` (research R4, R5). Run after T008, which edits the same file. Gate: still passes for the 33 existing tools (no existing spec parameter declares a `maxLength`).
-- [ ] T010 [P] Radio fixtures in `internal/tools/fakehub_test.go`, as constants like `voiceListJSON`:
+- [X] T005 Create `internal/tools/radio.go` with package doc-comment style as `tts.go`, and `radioError(ctx context.Context, client *http.Client, hubURL string, err error) error`: for an error matching `*hub.RadioNotOfferedError` (`errors.As`) return `hub.DiagnoseRadioUnavailable(ctx, client, hubURL)`, otherwise `err`. Make T004 pass.
+- [X] T006 [P] Failing test in `internal/tools/schema_test.go` for a new `withMaxLength(name string, n int) schemaOption`: it sets `maxLength` on a string property of an inferred schema, and panics for a property the struct lacks (like the other helpers). Run: fails to compile.
+- [X] T007 Add `withMaxLength` to `internal/tools/schema.go` (sets `Schema.MaxLength` on the named property) and make T006 pass.
+- [X] T008 Add the radio client to `Register`. Change `Register(s, client, speakClient, hubURL)` to `Register(s, client, speakClient, radioClient, hubURL)` in `internal/tools/tools.go` (doc comment: "radioClient serves the radio tools, whose bound is longer than the standard one"), add `n += registerRadio(s, client, radioClient, hubURL)` after `registerTTS`, and add `func registerRadio(s *mcp.Server, client, radioClient *http.Client, hubURL string) int { return 0 }` to `internal/tools/radio.go` (the stub grows in T014, T019 and T021). Update every caller: `cmd/sonora-mcp/main.go` (`radioClient := hub.NewClientWithTimeout(hub.RadioTimeout)`, passed in), `internal/tools/harness_test.go` (`newTestSessionClients` passes `speakClient` as the radio client too; add `newTestSessionRadio(t, hubURL, client, radioClient *http.Client)` that sets the radio client separately and the standard client for the rest), `internal/tools/conformance_test.go` (`TestRegisterCount` passes `nil, nil, nil`), `internal/server/server_test.go` (two calls) and `internal/server/shutdown_test.go`. Gate: `gofmt -l .`, `go vet ./...`, `go test ./...` all pass, still 33 tools.
+- [X] T009 In `internal/tools/conformance_test.go`: add `"countries", "languages"` to `listEnvelopes`, and add `"maxLength"` to `constraintKeys` (research R4, R5). Run after T008, which edits the same file. Gate: still passes for the 33 existing tools (no existing spec parameter declares a `maxLength`).
+- [X] T010 [P] Radio fixtures in `internal/tools/fakehub_test.go`, as constants like `voiceListJSON`:
   - `radioStationJSON`: a full station with every field of `hub.RadioStation`, for example uuid `9617a958-0601-11e8-ae97-52543be04c81`, uri `radiobrowser://9617a958-0601-11e8-ae97-52543be04c81`, name "Kiss FM", `countryCode` "UA", languages `["ukrainian"]`, tags `["pop","dance"]`, codec "MP3", bitrate 128, `hls` false, `lastCheckOk` true, `votes` 1200, `clickCount` 35; and `radioStationSparseJSON` where `name`, `favicon`, `homepage`, `countryCode`, `codec` and `bitrate` are `null` and the lists are empty.
   - `radioStationPageJSON` (two stations, `"nextOffset":2`), `radioLastPageJSON` (one station, `"nextOffset":null`), `radioEmptyPageJSON` (`{"stations":[],"nextOffset":null}`).
   - `radioCountriesJSON` (a bare array of `{code,name,stationCount}`), `radioLanguagesJSON` (a bare array of `{name,code,stationCount}`, one with `"code":null`), `radioTagPageJSON`.
   - `radioNotOfferedBody` is not needed: a plain 404 from the fake hub with `{"type":"about:blank","title":"Not Found","status":404}` is "not offered". Add `radioProblemJSON(typeSuffix, status, detail, parameter string) string` building a `urn:multiroom:radio:error:<suffix>` problem, and `radioInventoryJSON(status string) string` for an inventory with one `radio` entry.
-- [ ] T011 [P] In `internal/tools/tts_unavailable_test.go` replace the deprecated `hub.TTSDiagnosis` with `hub.ExtensionDiagnosis` (research R9). Gate: passes.
+- [X] T011 [P] In `internal/tools/tts_unavailable_test.go` replace the deprecated `hub.TTSDiagnosis` with `hub.ExtensionDiagnosis` (research R9). Gate: passes.
 
 **Checkpoint**: the gate passes with 33 tools; the new category, the diagnosis helper and the schema helper are
 tested; the radio client is plumbed to `registerRadio`.

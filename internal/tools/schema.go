@@ -66,3 +66,10 @@ func withPattern(name, pattern string) schemaOption {
 		property(s, name).Pattern = pattern
 	}
 }
+
+// withMaxLength sets maxLength on a string property.
+func withMaxLength(name string, n int) schemaOption {
+	return func(s *jsonschema.Schema) {
+		property(s, name).MaxLength = &n
+	}
+}

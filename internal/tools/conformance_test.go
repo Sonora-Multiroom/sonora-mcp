@@ -47,10 +47,10 @@ type specField struct {
 }
 
 // listEnvelopes are the wrapper properties of list results.
-var listEnvelopes = []string{"inputs", "outputs", "groups", "routes"}
+var listEnvelopes = []string{"inputs", "outputs", "groups", "routes", "countries", "languages"}
 
 // constraintKeys are the schema keywords compared between tool and spec.
-var constraintKeys = []string{"enum", "minimum", "maximum", "minLength", "pattern"}
+var constraintKeys = []string{"enum", "minimum", "maximum", "minLength", "maxLength", "pattern"}
 
 func loadSpec(t *testing.T) *openAPI {
 	t.Helper()
@@ -257,7 +257,7 @@ func TestToolDescriptions(t *testing.T) {
 // actually registered (used by the startup log).
 func TestRegisterCount(t *testing.T) {
 	server := mcp.NewServer(&mcp.Implementation{Name: "sonora-mcp", Version: "test"}, nil)
-	n := Register(server, nil, nil, "http://127.0.0.1:1")
+	n := Register(server, nil, nil, nil, "http://127.0.0.1:1")
 	res, err := connect(t, server).ListTools(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("ListTools: %v", err)

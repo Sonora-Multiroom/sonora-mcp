@@ -1,9 +1,11 @@
 package tools
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -181,3 +183,54 @@ const voiceListResultJSON = `{"providerName":"piper-local","voices":[` +
 
 // cacheStatsJSON is the hub's TTS cache statistics.
 const cacheStatsJSON = `{"totalEntries":42,"totalSizeBytes":15728640,"maxSizeBytes":524288000,"entriesByProvider":{"piper-local":7}}`
+
+// Radio fixtures. A plain 404 from the fake hub ({"type":"about:blank",...})
+// is what a hub without the radio extension answers on a radio path.
+
+// radioStationJSON is a station with every field set.
+const radioStationJSON = `{"uuid":"9617a958-0601-11e8-ae97-52543be04c81","uri":"radiobrowser://9617a958-0601-11e8-ae97-52543be04c81",` +
+	`"name":"Kiss FM","favicon":"https://kissfm.example/icon.png","homepage":"https://kissfm.example",` +
+	`"countryCode":"UA","languages":["ukrainian"],"tags":["pop","dance"],"codec":"MP3","bitrate":128,` +
+	`"hls":false,"lastCheckOk":true,"votes":1200,"clickCount":35}`
+
+// radioStationSparseJSON is a station whose optional fields are unknown.
+const radioStationSparseJSON = `{"uuid":"00000000-0000-4000-8000-000000000002","uri":"radiobrowser://00000000-0000-4000-8000-000000000002",` +
+	`"name":null,"favicon":null,"homepage":null,"countryCode":null,"languages":[],"tags":[],"codec":null,"bitrate":null,` +
+	`"hls":false,"lastCheckOk":false,"votes":0,"clickCount":0}`
+
+// radioStationPageJSON is a page of two stations with a next page at offset 2.
+const radioStationPageJSON = `{"stations":[` + radioStationJSON + `,` + radioStationSparseJSON + `],"nextOffset":2}`
+
+// radioLastPageJSON is a last page: one station and no next offset.
+const radioLastPageJSON = `{"stations":[` + radioStationJSON + `],"nextOffset":null}`
+
+// radioEmptyPageJSON is a search with no match.
+const radioEmptyPageJSON = `{"stations":[],"nextOffset":null}`
+
+// radioCountriesJSON is the hub's bare array of countries, largest first.
+const radioCountriesJSON = `[{"code":"US","name":"United States","stationCount":5000},{"code":"UA","name":"Ukraine","stationCount":300}]`
+
+// radioLanguagesJSON is the hub's bare array of languages; the second has no code.
+const radioLanguagesJSON = `[{"name":"english","code":"en","stationCount":9000},{"name":"pidgin","code":null,"stationCount":12}]`
+
+// radioTagPageJSON is a page of two tags with a next page at offset 5.
+const radioTagPageJSON = `{"tags":[{"name":"jazz","stationCount":800},{"name":"smooth jazz","stationCount":90}],"nextOffset":5}`
+
+// radioProblemJSON builds a radio extension problem body of the given type
+// suffix (for example "invalid-parameter"), status and detail; parameter is
+// omitted when empty.
+func radioProblemJSON(typeSuffix string, status int, detail, parameter string) string {
+	b, _ := json.Marshal(detail)
+	s := `{"type":"urn:multiroom:radio:error:` + typeSuffix + `","title":"` + typeSuffix + `","status":` + strconv.Itoa(status) + `,"detail":` + string(b)
+	if parameter != "" {
+		p, _ := json.Marshal(parameter)
+		s += `,"parameter":` + string(p)
+	}
+	return s + `}`
+}
+
+// radioInventoryJSON is an extension inventory with loading on and one radio
+// extension in the given status (for example "DISABLED").
+func radioInventoryJSON(status string) string {
+	return inventoryJSON(true, `{"id":"radio","status":"`+status+`","rejectionReason":null}`)
+}

@@ -62,3 +62,23 @@ func TestInputSchemaUnknownPropertyPanics(t *testing.T) {
 		})
 	}
 }
+
+type schemaLengthInput struct {
+	Name string `json:"name" jsonschema:"A name"`
+}
+
+func TestInputSchemaMaxLength(t *testing.T) {
+	s := inputSchema[schemaLengthInput](withMaxLength("name", 100))
+	if ml := s.Properties["name"].MaxLength; ml == nil || *ml != 100 {
+		t.Errorf("name maxLength = %v, want 100", ml)
+	}
+}
+
+func TestInputSchemaMaxLengthUnknownPropertyPanics(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatal("want panic for unknown property")
+		}
+	}()
+	inputSchema[schemaLengthInput](withMaxLength("nope", 1))
+}

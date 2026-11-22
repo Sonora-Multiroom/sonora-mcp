@@ -22,11 +22,21 @@ func newTestSession(t *testing.T, hubURL string, client *http.Client) *mcp.Clien
 	return newTestSessionClients(t, hubURL, client, client)
 }
 
-// newTestSessionClients is newTestSession with a separate client for speak.
+// newTestSessionRadio is newTestSession with a separate client for the radio
+// tools; client serves every other call.
+func newTestSessionRadio(t *testing.T, hubURL string, client, radioClient *http.Client) *mcp.ClientSession {
+	t.Helper()
+	server := mcp.NewServer(&mcp.Implementation{Name: "sonora-mcp", Version: "test"}, nil)
+	Register(server, client, client, radioClient, hubURL)
+	return connect(t, server)
+}
+
+// newTestSessionClients is newTestSession with a separate client for speak;
+// the radio tools use speakClient too.
 func newTestSessionClients(t *testing.T, hubURL string, client, speakClient *http.Client) *mcp.ClientSession {
 	t.Helper()
 	server := mcp.NewServer(&mcp.Implementation{Name: "sonora-mcp", Version: "test"}, nil)
-	Register(server, client, speakClient, hubURL)
+	Register(server, client, speakClient, speakClient, hubURL)
 	return connect(t, server)
 }
 

@@ -19,6 +19,7 @@ const (
 	CategorySourceUnreachable  = "SourceUnreachable"
 	CategoryServiceUnavailable = "ServiceUnavailable"
 	CategoryTtsUnavailable     = "TtsUnavailable"
+	CategoryRadioUnavailable   = "RadioUnavailable"
 	CategoryNetwork            = "Network"
 	CategoryTimeout            = "Timeout"
 	CategoryMalformedResponse  = "MalformedResponse"
@@ -60,6 +61,17 @@ func classify(err error) (category, message string) {
 		}
 		return CategoryTtsUnavailable, unavailErr.Error()
 	}
+	var radioErr *hub.RadioUnavailableError
+	if errors.As(err, &radioErr) {
+		if radioErr.Diagnosis == hub.DiagnosisHubAddress {
+			return CategoryNetwork, radioErr.Error()
+		}
+		return CategoryRadioUnavailable, radioErr.Error()
+	}
+	var radioNotOffered *hub.RadioNotOfferedError
+	if errors.As(err, &radioNotOffered) {
+		return CategoryRadioUnavailable, "radio is not available on this hub"
+	}
 	var decodeErr *hub.DecodeError
 	if errors.As(err, &decodeErr) {
 		return CategoryMalformedResponse, fmt.Sprintf("the hub's response could not be read: %v", decodeErr.Err)
@@ -83,6 +95,11 @@ func classify(err error) (category, message string) {
 		message += " (" + apiErr.Reason + ")"
 	}
 
+	// Name the input the hub refused, so the agent knows which to correct.
+	if apiErr != nil && apiErr.Parameter != "" {
+		message += " (parameter " + apiErr.Parameter + ")"
+	}
+
 	switch class {
 	case hub.ClassNotFound, hub.ClassInputNotFound, hub.ClassTargetNotFound:
 		return CategoryNotFound, message
@@ -98,6 +115,8 @@ func classify(err error) (category, message string) {
 		return CategoryServiceUnavailable, message
 	case hub.ClassTTSUnavailable:
 		return CategoryTtsUnavailable, message
+	case hub.ClassRadioUnavailable:
+		return CategoryRadioUnavailable, message
 	case hub.ClassNetwork:
 		return CategoryNetwork, fmt.Sprintf("%s: %v", message, err)
 	default:
