@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/Sonora-Multiroom/sonora-cli/hub"
 )
@@ -19,12 +20,17 @@ const (
 	CategorySourceUnreachable  = "SourceUnreachable"
 	CategoryServiceUnavailable = "ServiceUnavailable"
 	CategoryTtsUnavailable     = "TtsUnavailable"
+	CategoryRadioUnavailable   = "RadioUnavailable"
 	CategoryNetwork            = "Network"
 	CategoryTimeout            = "Timeout"
 	CategoryMalformedResponse  = "MalformedResponse"
 	CategoryHubError           = "HubError"
 	CategoryInternal           = "Internal"
 )
+
+// radioProblemPrefix starts the type of every problem the hub's radio
+// extension reports.
+const radioProblemPrefix = "urn:multiroom:radio:error:"
 
 // categoryError is a tool failure: a category and a message for the agent,
 // wrapping the underlying error.
@@ -60,6 +66,17 @@ func classify(err error) (category, message string) {
 		}
 		return CategoryTtsUnavailable, unavailErr.Error()
 	}
+	var radioErr *hub.RadioUnavailableError
+	if errors.As(err, &radioErr) {
+		if radioErr.Diagnosis == hub.DiagnosisHubAddress {
+			return CategoryNetwork, radioErr.Error()
+		}
+		return CategoryRadioUnavailable, radioErr.Error()
+	}
+	var radioNotOffered *hub.RadioNotOfferedError
+	if errors.As(err, &radioNotOffered) {
+		return CategoryRadioUnavailable, "radio is not available on this hub"
+	}
 	var decodeErr *hub.DecodeError
 	if errors.As(err, &decodeErr) {
 		return CategoryMalformedResponse, fmt.Sprintf("the hub's response could not be read: %v", decodeErr.Err)
@@ -74,13 +91,20 @@ func classify(err error) (category, message string) {
 	// Keep the hub's own explanation where ClassifyError replaces it with a
 	// generic message (FR-010).
 	var apiErr *hub.APIError
-	if errors.As(err, &apiErr) && apiErr.Detail != "" && message != apiErr.Detail {
+	// A radio problem's message is already built from its detail.
+	if errors.As(err, &apiErr) && apiErr.Detail != "" && message != apiErr.Detail &&
+		!strings.HasPrefix(apiErr.Type, radioProblemPrefix) {
 		message += ": " + apiErr.Detail
 	}
 	// Name why the hub refused a route, so the agent knows which state to
 	// change; an unknown reason is passed through as is.
 	if apiErr != nil && apiErr.Reason != "" {
 		message += " (" + apiErr.Reason + ")"
+	}
+
+	// Name the input the hub refused, so the agent knows which to correct.
+	if apiErr != nil && apiErr.Parameter != "" {
+		message += " (parameter " + apiErr.Parameter + ")"
 	}
 
 	switch class {
@@ -98,6 +122,8 @@ func classify(err error) (category, message string) {
 		return CategoryServiceUnavailable, message
 	case hub.ClassTTSUnavailable:
 		return CategoryTtsUnavailable, message
+	case hub.ClassRadioUnavailable:
+		return CategoryRadioUnavailable, message
 	case hub.ClassNetwork:
 		return CategoryNetwork, fmt.Sprintf("%s: %v", message, err)
 	default:

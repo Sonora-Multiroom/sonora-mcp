@@ -14,7 +14,7 @@ func TestTTSError(t *testing.T) {
 		name       string
 		status     int
 		inventory  string
-		want       hub.TTSDiagnosis
+		want       hub.ExtensionDiagnosis
 		reason     string
 		loadingOff bool
 	}{
